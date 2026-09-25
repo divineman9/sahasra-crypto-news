@@ -1,0 +1,8 @@
+#!/bin/bash
+# Runs every Phase-2 assertion suite against the isolated test DB; exits non-zero if any suite fails.
+cd "$(dirname "$0")"; export NODE_PATH="D:/claude projects/crypto-news-terminal/app/node_modules"; rc=0
+for t in step1_newsfile step2_extract step3_recover step3_scheduler step_redis_optional fix1 supervisor details fix2 step5_signals step5_worker step67_sources step67_debounce fix3 fix3b step1_newsfile2 step1_stocks p3_step4a p3_step2_tagger p3_step3_feeds; do
+  out=$(timeout 200 node $t.test.js 2>&1); code=$?
+  echo "$out" | grep -E "FAIL|passed, "; [ $code -ne 0 ] && { echo ">>> $t FAILED (exit $code)"; rc=1; }
+done
+echo "ALL SUITES: $([ $rc -eq 0 ] && echo PASS || echo FAIL)"; exit $rc

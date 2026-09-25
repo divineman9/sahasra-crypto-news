@@ -1,0 +1,8 @@
+Write ONLY these 9 frontend files from Batch C of section 11 of the MASTER SPEC (contract), nothing else:
+src/app/layout.tsx, src/app/globals.css, src/app/page.tsx, src/lib/mockPosts.ts, src/store/useFeedStore.ts,
+src/hooks/useFeedSocket.ts, src/hooks/useHydratePosts.ts, src/components/TopBar.tsx, src/components/RightSidebar.tsx.
+Other files are written by other batches — import them exactly as named in the contract: types from "@/lib/types", filters from "@/lib/filters",
+components "@/components/LeftSidebar" (export function LeftSidebar), "@/components/NewsFeed" (export function NewsFeed),
+"@/components/PriceWidget" (export function PriceWidget), "@/components/TrendingCoins" (export function TrendingCoins).
+All components use NAMED exports (export function X), except page.tsx and layout.tsx which use default exports.
+The store hook is `export const useFeedStore`. Follow sections 3, 4, 6 and 11 literally.

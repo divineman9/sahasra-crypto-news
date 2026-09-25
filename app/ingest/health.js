@@ -1,0 +1,44 @@
+'use strict';
+
+function toMs(v) {
+  if (v instanceof Date) return v.getTime() > 0 ? v.getTime() : null;
+  if (typeof v === 'number' && Number.isFinite(v) && v > 0) return v;
+  return null;
+}
+
+function startHealth({ scheduler, alerts, intervalMs = 60000 }) {
+  const startedAt = Date.now();
+  const check = () => {
+    try {
+      let entries;
+      try {
+        entries = scheduler.health();
+      } catch (e) {
+        return;
+      }
+      for (const a of entries) {
+        const limit = a.tier === 1 ? 15 * 60000 : 30 * 60000;
+        const ref = toMs(a.lastOkAt) ?? startedAt;
+        const age = Date.now() - ref;
+        if (age > limit) {
+          const mins = Math.floor(age / 60000);
+          const text = `no successful poll for ${mins} min, last error: ${a.lastErr || 'none'}`;
+          console.error(`[health] ${a.name} ${text}`);
+          if (alerts) alerts.healthAlert(a.name, text);
+        }
+        if ((a.consecutiveSaveErrors || 0) >= 5) {
+          const text = `saving items is failing (${a.consecutiveSaveErrors} runs in a row): ${a.lastSaveErr || ''}`;
+          console.error(`[health] ${a.name} ${text}`);
+          if (alerts) alerts.healthAlert(a.name, text);
+        }
+      }
+    } catch (e) {
+      console.error('[health] check error', e.message);
+    }
+  };
+  const timer = setInterval(check, intervalMs);
+  check();
+  return () => clearInterval(timer);
+}
+
+module.exports = { startHealth };

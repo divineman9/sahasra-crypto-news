@@ -1,0 +1,4 @@
+Write ONLY the Batch B files from section 11 of the MASTER SPEC (contract), exactly these 5 files and nothing else:
+ingest.js, ws-server.js, src/app/api/posts/route.ts, src/app/api/posts/[id]/vote/route.ts, src/app/api/prices/route.ts.
+Other files (lib/instruments.js, lib/mockNews.js, lib/serialize.js, src/lib/prisma.ts, src/lib/redis.ts, src/lib/serialize.ts, src/lib/types.ts) are written by another batch — import them exactly by the names/exports defined in the contract; do not re-create them.
+Follow sections 3, 5, 6, 7 literally.

@@ -1,0 +1,100 @@
+import type { FilterKey, PostDTO } from "@/lib/types";
+
+export type { FilterKey };
+
+export interface StoryView {
+  post: PostDTO;
+  members: PostDTO[];
+  count: number;
+  maxImportance: number;
+  tier1: boolean;
+}
+
+export const HOT_IMPORTANCE = 70;
+export const FRESH_MS = 48 * 3600 * 1000;
+const RISING_MS = 3600 * 1000;
+
+export function ageMs(p: PostDTO, now: number): number {
+  return now - Date.parse(p.publishedAt);
+}
+
+export function isFresh(p: PostDTO, now: number): boolean {
+  return ageMs(p, now) <= FRESH_MS;
+}
+
+export function fmtAge(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
+export function byFirstSeenDesc(a: PostDTO, b: PostDTO): number {
+  if (a.firstSeenAt !== b.firstSeenAt) return a.firstSeenAt < b.firstSeenAt ? 1 : -1;
+  return a.id < b.id ? 1 : -1;
+}
+
+export function groupStories(posts: PostDTO[]): StoryView[] {
+  const groups = new Map<string, PostDTO[]>();
+  for (const p of posts) {
+    const key = p.storyId ?? p.id;
+    let arr = groups.get(key);
+    if (!arr) {
+      arr = [];
+      groups.set(key, arr);
+    }
+    arr.push(p);
+  }
+  const views: StoryView[] = [];
+  for (const members of groups.values()) {
+    members.sort((a, b) => {
+      if (a.firstSeenAt !== b.firstSeenAt) return a.firstSeenAt < b.firstSeenAt ? -1 : 1;
+      return a.id < b.id ? -1 : 1;
+    });
+    views.push({
+      post: members[0],
+      members,
+      count: members.length,
+      maxImportance: members.reduce((m, x) => Math.max(m, x.importance), 0),
+      tier1: members.some((m) => m.sourceTier === 1),
+    });
+  }
+  views.sort((a, b) => byFirstSeenDesc(a.post, b.post));
+  return views;
+}
+
+export function matchesStory(v: StoryView, f: FilterKey, now: number): boolean {
+  switch (f) {
+    case "all":
+      return true;
+    case "hot":
+      return v.maxImportance >= HOT_IMPORTANCE && isFresh(v.post, now);
+    case "rising":
+      return v.members.filter((m) => now - Date.parse(m.firstSeenAt) <= RISING_MS && now - Date.parse(m.publishedAt) <= 6 * 3600 * 1000).length >= 2;
+    case "bullish":
+      return v.post.sentiment === "bullish";
+    case "bearish":
+      return v.post.sentiment === "bearish";
+    case "exchange":
+      return v.tier1;
+    default:
+      return true;
+  }
+}
+
+export function visibleStories(
+  posts: PostDTO[],
+  f: FilterKey,
+  portfolio: string[],
+  now: number
+): StoryView[] {
+  let views = groupStories(posts).filter((v) => matchesStory(v, f, now));
+  if (portfolio.length > 0) {
+    const set = new Set(portfolio);
+    views = views.filter((v) => v.members.some((m) => m.instruments.some((i) => set.has(i.ticker))));
+  }
+  return views;
+}

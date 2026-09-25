@@ -1,0 +1,7 @@
+Write ONLY these 5 frontend component files from Batch C of section 11 of the MASTER SPEC (contract), nothing else:
+src/components/LeftSidebar.tsx, src/components/NewsFeed.tsx, src/components/FeedRow.tsx, src/components/PriceWidget.tsx, src/components/TrendingCoins.tsx.
+All use NAMED exports: export function LeftSidebar / NewsFeed / FeedRow / PriceWidget / TrendingCoins. FeedRow props: `{ post: PostDTO; flash: boolean }`.
+Other files are written by other batches — use them exactly as the contract defines:
+types from "@/lib/types" (PostDTO, VoteType, FilterKey, Votes), `visiblePosts`/`score` from "@/lib/filters",
+`useFeedStore` from "@/store/useFeedStore" with state/actions exactly as listed in section 11 (posts, source, filter, portfolio, wsStatus, flashIds, hydrate, mergeSnapshot, upsertPost, setFilter, addTicker, removeTicker, setWsStatus, applyLocalVote).
+/api/prices response shape per section 7. Follow sections 3, 4 and 11 literally.

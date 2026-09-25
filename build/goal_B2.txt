@@ -1,0 +1,7 @@
+Write ONLY these 3 Next.js route handler files from Batch B of section 11 of the MASTER SPEC (contract), nothing else:
+src/app/api/posts/route.ts
+src/app/api/posts/[id]/vote/route.ts
+src/app/api/prices/route.ts
+Each file block header MUST be on its own line in exactly this form: ===FILE: src/app/api/posts/route.ts===
+Import `prisma` from "@/lib/prisma", `redis` from "@/lib/redis", `serializePost` from "@/lib/serialize", types from "@/lib/types" (these already exist; do not re-create them).
+Follow section 7 literally.

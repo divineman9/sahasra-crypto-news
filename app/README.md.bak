@@ -1,0 +1,68 @@
+# Crypto News Terminal
+
+A dense, Bloomberg-style crypto news terminal. Next.js 15 + React 19 + Tailwind v3 + Prisma (PostgreSQL) + Redis + WebSocket live feed.
+
+## Prerequisites
+
+- Node 20+
+- PostgreSQL (any recent version), running on `localhost:5432` with a database and user created for the app
+- Redis inside WSL Ubuntu, installed with:
+
+  ```
+  wsl -d Ubuntu -u root -- sh -c "apt-get update && apt-get install -y redis-server"
+  ```
+
+## Windows 11 setup
+
+1. **Create your `.env`** by copying `.env.example` to `.env` and filling in your PostgreSQL credentials:
+
+   ```
+   copy .env.example .env
+   ```
+
+2. **Install dependencies**:
+
+   ```
+   npm install
+   ```
+
+3. **Create the database schema**:
+
+   ```
+   npm run db:push
+   ```
+
+4. **Seed 20 sample posts** (run `npm run redis` in a separate terminal first, since Redis must be running):
+
+   ```
+   npm run db:seed
+   ```
+
+5. **Run everything** — `npm run all` starts Redis (via `npm run redis`) together with Next.js, the WebSocket server and the ingest worker:
+
+   ```
+   npm run all
+   ```
+
+6. **Open the terminal**: http://localhost:4180
+
+## Ports
+
+- Next.js: 4180
+- WebSocket server: 4181
+
+## Using the terminal
+
+- Click a headline to open its article page (simulated articles have no external source page).
+- While your mouse is over the feed or it is scrolled down, new posts are held and a "N new posts — click to show" bar appears.
+- Each vote type can be cast once per post per browser.
+- "Load older" at the bottom pages back through the archive.
+- Hot = score >= 8, Rising = under 1 hour old with score 5-7 (score = bullish + bearish + 2×important − toxic).
+
+## Notes
+
+- Requires PostgreSQL running locally with a `cryptonews` database (see `DATABASE_URL` in `.env`).
+- Redis runs in WSL, and WSL shuts down when idle, so Redis must run as a foreground process. `npm run all` starts Redis (via `npm run redis`) together with Next.js, the WebSocket server and the ingest worker. If you want to run `npm run db:seed` on its own, run `npm run redis` in a separate terminal first.
+- If one process crashes, `npm run all` restarts it up to 3 times and keeps the others running.
+- The app binds to 127.0.0.1 only: http://localhost:4180 (web) and ws://localhost:4181 (WebSocket feed).
+- The UI starts with mock data and switches to LIVE once the API and WebSocket feed connect.

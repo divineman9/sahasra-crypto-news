@@ -1,0 +1,104 @@
+'use strict';
+
+require('dotenv').config();
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+const { buildSnapshot } = require('./ingest/signalSnapshot');
+const { BBW_LIVE_JSON, NEWS_LIVE_JSON } = require('./ingest/config');
+
+const EVENTS_LIVE_JSON =
+  process.env.EVENTS_LIVE_JSON ||
+  'D:\\claude projects\\crypto\\screener\\events_live.json';
+
+const fs = require('fs');
+const TICK_MS = 15 * 1000;
+
+function readJson(file) {
+  try {
+    const raw = fs.readFileSync(file, 'utf8');
+    return JSON.parse(raw);
+  } catch (err) {
+    return null;
+  }
+}
+
+async function loadExistingKeys() {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const rows = await prisma.signalSnapshot.findMany({
+    where: { firstSeenAt: { gte: since } },
+    select: { key: true },
+  });
+  return new Set(rows.map((r) => r.key));
+}
+
+async function tick(storedKeys) {
+  const bbw = readJson(BBW_LIVE_JSON);
+  if (!bbw) return;
+
+  const news = readJson(NEWS_LIVE_JSON);
+  const events = readJson(EVENTS_LIVE_JSON);
+  const now = new Date();
+
+  const bbwAsof = bbw.asof || bbw.asof_iso || null;
+  const setups = Array.isArray(bbw.setups) ? bbw.setups : [];
+
+  for (const setup of setups) {
+    const data = buildSnapshot({ setup, bbwAsof, news, events, now });
+    if (!data) continue;
+
+    if (storedKeys.has(data.key)) continue;
+
+    try {
+      await prisma.signalSnapshot.create({ data });
+      storedKeys.add(data.key);
+      console.log(
+        `[signals] ${data.symbol} ${data.tf} ${data.stage} ${data.direction} coverage=${data.coverage} risk=${data.riskClass} events=${data.eventLevel}`
+      );
+    } catch (err) {
+      if (err && err.code === 'P2002') {
+        storedKeys.add(data.key);
+        continue;
+      }
+      console.error(
+        `[signals] failed to store ${data.key}: ${err && err.message ? err.message : err}`
+      );
+    }
+  }
+}
+
+async function main() {
+  const storedKeys = await loadExistingKeys();
+  console.log(
+    `[signals] snapshotter started (${storedKeys.size} existing keys loaded)`
+  );
+
+  let running = false;
+  setInterval(async () => {
+    if (running) return;
+    running = true;
+    try {
+      await tick(storedKeys);
+    } catch (err) {
+      console.error(`[signals] tick error: ${err && err.stack ? err.stack : err}`);
+    } finally {
+      running = false;
+    }
+  }, TICK_MS);
+}
+
+process.on('SIGINT', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+main().catch((err) => {
+  console.error(`[signals] fatal: ${err && err.stack ? err.stack : err}`);
+  process.exit(1);
+});

@@ -1,0 +1,99 @@
+Build the "Crypto News Terminal": a real-time crypto news aggregator per the architecture spec below. Target: Windows 11, Node 24, run locally.
+
+ENVIRONMENT DECISIONS (fixed, do not change):
+- Database: existing local PostgreSQL 18 at localhost:5432, database "cryptonews". Prisma reads DATABASE_URL from a .env file (user fills it in; ship a .env.example with DATABASE_URL, REDIS_URL, WS_PORT, NEXT_PUBLIC_WS_URL). Use the Prisma schema from the spec exactly (implicit many-to-many Post<->Instrument).
+- Redis: local Redis 8 at redis://localhost:6379 (node package "ioredis").
+- Ports: Next.js dev server on 4180 (package.json "dev": "next dev -p 4180"), WebSocket server on 4181.
+- Implement section 6 steps 1-5, PLUS the Redis layer from section 3: ingest.js inserts the Post into Postgres via Prisma, LPUSH's the JSON to Redis list "news:hot" with LTRIM 0 999, and PUBLISHes it on channel "news:new". The WebSocket server (ws-server.js, package "ws") SUBSCRIBEs to "news:new" and broadcasts to all clients; on client connect it sends the latest 50 from "news:hot" as {type:"snapshot",posts:[...]}, new items as {type:"post",post:{...}}. This satisfies step 5 (ingest -> broadcast) via Redis pub/sub.
+- Skip the Python ingestion workers and Docker (out of scope for this build). Ingestion = mock ingest.js generating a fake article every 5 seconds with realistic crypto headlines, random sources, 1-3 tickers from a seeded instrument list (~30 top coins), random sentiment/kind, and a VoteData row.
+- prisma/seed.js seeds instruments + 20 mock posts. REST: GET /api/posts?cursor=&limit= (cursor pagination, newest first, includes instruments+votes), POST /api/posts/[id]/vote {type: bullish|bearish|important|toxic}.
+- Frontend: Next.js App Router + TypeScript + Tailwind + Zustand + lucide-react. Zustand store starts with 20 mock items, then hydrates from /api/posts and live WebSocket updates (dedupe by id, newest on top, auto-reconnect). Left sidebar filters actually filter (All/Hot/Rising/Bullish/Bearish) + simple localStorage portfolio ticker list that filters feed. Right sidebar: trending tickers computed from feed + CoinGecko simple price widget (fetch via a Next API route proxy with 60s cache, graceful fallback on error).
+- npm scripts: dev, ws, ingest, db:push, db:seed, and "all" using concurrently to run dev+ws+ingest.
+- README with Windows setup steps.
+
+ARCHITECTURE SPEC:
+# ARCHITECTURE.md: Real-Time Crypto News Aggregator
+
+## 1. Project Overview
+**Objective:** Build a high-throughput, real-time cryptocurrency news aggregator mirroring the terminal-style UI and instantaneous delivery of platforms like CryptoPanic.
+**Core Mechanics:** The system ingests external news feeds via background workers, standardizes the payload, stores historical data in a relational database, pushes the "hot" feed to Redis, and broadcasts new items to clients via WebSockets.
+
+## 2. Technology Stack
+*   **Frontend:** Next.js (App Router), React, Tailwind CSS (Dark mode by default), Zustand (global state), Lucide React (icons).
+*   **Backend API:** Next.js Server Components and API Routes.
+*   **Real-time Layer:** Custom Node.js WebSocket Server + Redis (Pub/Sub and hot cache).
+*   **Ingestion/Processing:** Python (Celery/Redis or pure async) for scraping, deduplication, and basic NLP (ticker extraction, sentiment tagging).
+*   **Database:** PostgreSQL with Prisma ORM.
+
+## 3. System Architecture & Data Flow
+
+1.  **Ingestion Workers (Python):** Background scripts poll RSS feeds, Twitter APIs, and the CoinGecko API. 
+2.  **Processing Pipeline:**
+    *   **Deduplication:** Hash titles and URLs. Drop identical hashes.
+    *   **Tagging:** Regex/NLP matches against a dictionary of top 500 crypto tickers (e.g., matching "Ethereum" or "Vitalik" to `$ETH`).
+    *   **Scoring:** Assign a default base score.
+3.  **Storage & Caching:**
+    *   The worker inserts the structured `Post` object into **PostgreSQL** for permanent archiving.
+    *   Simultaneously, the worker pushes the `Post` to a **Redis List** (capping at the 1000 most recent items for the hot feed) and publishes an event to a Redis Pub/Sub channel.
+4.  **Delivery Gateway:**
+    *   A **WebSocket Server** subscribes to the Redis Pub/Sub channel. When a new post arrives, it broadcasts the JSON payload to all connected frontend clients.
+    *   Standard REST endpoints serve historical pagination and user settings.
+
+## 4. Core Data Models (Prisma Schema Reference)
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id           String       @id @default(uuid())
+  title        String
+  url          String       @unique
+  sourceDomain String
+  publishedAt  DateTime
+  kind         String       // "news", "media", "blog"
+  sentiment    String       // "bullish", "bearish", "neutral"
+  instruments  Instrument[] // Relation to tagged coins
+  votes        VoteData?
+  createdAt    DateTime     @default(now())
+}
+
+model Instrument {
+  id     String @id @default(uuid())
+  ticker String @unique // e.g., "BTC"
+  name   String // e.g., "Bitcoin"
+  posts  Post[]
+}
+
+model VoteData {
+  id        String @id @default(uuid())
+  postId    String @unique
+  post      Post   @relation(fields: [postId], references: [id])
+  bullish   Int    @default(0)
+  bearish   Int    @default(0)
+  important Int    @default(0)
+  toxic     Int    @default(0)
+}
+```
+
+## 5. UI/UX Specifications
+*   **Layout:** Three-column layout. 
+    *   **Left Sidebar:** Filters (All, Hot, Rising, Bullish, Bearish) and Portfolio tracking.
+    *   **Center Feed:** The dense, high-frequency terminal list. Rows must be highly compressed vertically. Columns: Time (HH:MM), Title, Source, Ticker tags, Sentiment voting buttons.
+    *   **Right Sidebar:** Trending coins / CoinGecko price widget.
+*   **Styling:** Monospaced fonts for numbers, dark slate backgrounds (`bg-slate-900`), neon accent colors for tickers (Green for Bullish, Red for Bearish).
+
+## 6. Execution Instructions for AI Assistant
+Please build this application by executing the following sequence:
+
+1.  **Initialize Frontend:** Bootstrap a Next.js App Router project with Tailwind CSS. Set up a dark-mode, three-column layout.
+2.  **State & Mock Data:** Create a Zustand store. Populate it with 20 mock crypto news items. Render the dense center feed.
+3.  **Database Setup:** Initialize Prisma with PostgreSQL using the schema provided above. Create API routes to fetch paginated posts.
+4.  **Ingestion Mock:** Create a Node.js script (`ingest.js`) that generates a fake news article every 5 seconds and inserts it into the database.
+5.  **WebSocket Integration:** Set up a local WebSocket server (using `ws` or `socket.io`). Connect the frontend to listen for incoming messages. Update the `ingest.js` script to broadcast to the WebSocket server whenever a new article is generated, bypassing the need for manual browser refreshes.

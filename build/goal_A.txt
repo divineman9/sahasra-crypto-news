@@ -1,0 +1,5 @@
+Write ONLY the Batch A files from section 11 of the MASTER SPEC (contract), exactly these 18 files and nothing else:
+package.json, tsconfig.json, next.config.mjs, postcss.config.mjs, tailwind.config.ts, .env.example, .gitignore, README.md,
+prisma/schema.prisma, prisma/seed.js, lib/instruments.js, lib/mockNews.js, lib/serialize.js,
+src/lib/prisma.ts, src/lib/redis.ts, src/lib/types.ts, src/lib/serialize.ts, src/lib/filters.ts.
+Follow sections 1-5 and 8-11 literally. README.md and package.json ARE requested in this batch.

@@ -1,0 +1,27 @@
+function serializePost(p) {
+  const instruments = (p.instruments || [])
+    .map((i) => ({ ticker: i.ticker, name: i.name }))
+    .sort((a, b) => (a.ticker < b.ticker ? -1 : a.ticker > b.ticker ? 1 : 0));
+  const votes = p.votes
+    ? {
+        bullish: p.votes.bullish,
+        bearish: p.votes.bearish,
+        important: p.votes.important,
+        toxic: p.votes.toxic,
+      }
+    : { bullish: 0, bearish: 0, important: 0, toxic: 0 };
+  return {
+    id: p.id,
+    title: p.title,
+    url: p.url,
+    sourceDomain: p.sourceDomain,
+    publishedAt: new Date(p.publishedAt).toISOString(),
+    createdAt: new Date(p.createdAt).toISOString(),
+    kind: p.kind,
+    sentiment: p.sentiment,
+    instruments,
+    votes,
+  };
+}
+
+module.exports = { serializePost };

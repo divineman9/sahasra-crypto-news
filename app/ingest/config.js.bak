@@ -1,0 +1,20 @@
+'use strict';
+
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140 Safari/537.36';
+const SEC_UA = process.env.SEC_USER_AGENT || '';
+const DISCORD_WEBHOOK = process.env.DISCORD_NEWS_WEBHOOK || '';
+const PORTFOLIO = (process.env.NEWS_PORTFOLIO || '').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+const BBW_LIVE_JSON = process.env.BBW_LIVE_JSON || 'D:\\claude projects\\crypto\\screener\\base_break_live.json';
+const NEWS_LIVE_JSON = process.env.NEWS_LIVE_JSON || 'D:\\claude projects\\crypto\\screener\\news_live.json';
+const KEEP_DAYS = 7;
+
+const RSS_FEEDS = [
+  { name: 'rss:cointelegraph', url: 'https://cointelegraph.com/rss', domain: 'cointelegraph.com' },
+  { name: 'rss:theblock', url: 'https://www.theblock.co/rss.xml', domain: 'theblock.co' },
+  { name: 'rss:decrypt', url: 'https://decrypt.co/feed', domain: 'decrypt.co' },
+  { name: 'rss:coindesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', domain: 'coindesk.com' },
+  { name: 'rss:cryptoslate', url: 'https://cryptoslate.com/feed/', domain: 'cryptoslate.com' },
+  { name: 'rss:beincrypto', url: 'https://beincrypto.com/feed/', domain: 'beincrypto.com' },
+];
+
+module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, RSS_FEEDS };

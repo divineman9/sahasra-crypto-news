@@ -1,0 +1,24 @@
+export type Sentiment = "bullish" | "bearish" | "neutral";
+export type Kind = "news" | "media" | "blog";
+export type VoteType = "bullish" | "bearish" | "important" | "toxic";
+export type FilterKey = "all" | "hot" | "rising" | "bullish" | "bearish";
+
+export interface Votes {
+  bullish: number;
+  bearish: number;
+  important: number;
+  toxic: number;
+}
+
+export interface PostDTO {
+  id: string;
+  title: string;
+  url: string;
+  sourceDomain: string;
+  publishedAt: string; // ISO 8601
+  createdAt: string; // ISO 8601
+  kind: Kind;
+  sentiment: Sentiment;
+  instruments: { ticker: string; name: string }[];
+  votes: Votes; // zeros if VoteData row missing
+}

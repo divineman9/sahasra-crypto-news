@@ -1,0 +1,27 @@
+# Fable — Sahasra vs CryptoPanic gap (2026-09-25 ~15:00Z, verified live) — condensed
+
+WHY: (1) history — DB only ~6 h old (re-created 00:47, ingest 08:59); (2) breadth — 13 sources vs hundreds (raw rate ~35-43/h is similar, but from 6 names); (3) altcoin coverage weak: 12/49 live-setup coins have any tagged post ≤48h (8 of 12 are majors); (4) look — dense terminal grid vs headline list with age, source, chips, tabs, per-coin pages. All fixable for free.
+
+ALTCOIN (top priority):
+- Uncovered now: XRP DOGE ADA LINK BNB SUI NEAR ARB PEPE ENA FET WLD UNI TAO ... (source-breadth failure, not tagger).
+- Tokenized-stock false tickers pollute Trending: OURA CORZ SDGR TLT STONK JEPQ KIOXIA URNM HUT.
+- BUG: /api/news?ticker= defaults minImportance=50 → INJ (4 posts) returns 0. Chip should use minImportance=0 + importantCount. (app/src/app/api/news/route.ts)
+- CryptoPanic per-coin pages show ~2-10 items/day for mid-caps (low bar).
+- Winner: Google News RSS per coin `https://news.google.com/rss/search?q=<query>+when:2d&hl=en-US&gl=US&ceid=US:en` — ARB 36, NEAR 40, PEPE 49, ENA 32, WLD 24, SUI 7, FET 8 items/48h (7/7 vs 0/7 today). Needs disambiguated queries (bare "Sui"/"NEAR" = junk). Bing News RSS as fallback.
+- Official layer: GitHub releases.atom, project blogs (Ghost/paragraph; Medium often stale), Discourse latest.rss, project TG t.me/s/.
+- CoinGecko /coins/{id} links = per-coin source map (free Demo key 30/min, one-time crawl).
+- Binance Square: bot-walled, skip. X/Twitter: no free read, Nitter dead → use Telegram mirrors (TreeNewsFeed, wublockchainenglish, WatcherGuru, whale_alert_io, Walter_Bloomberg, unfolded, binance_announcements, PeckShieldAlert, CertiKAlert, TheBlock, cointelegraph).
+- Design: coin_sources.json map; query template with ambiguity rules (reuse tickers.js BARE_BLOCK/NAME_BLOCK) + title must contain name/$SYM guard + stock exclusion; tiers A (live setups, 5 min), B (portfolio+top100, 30 min), C (rest, 2-3 h, batched OR queries) ≈ 14-15 req/min; tier 4, importance 25, promoted by classify regexes; 7-day backfill for A+B. Expect 12/49 → ≥45/49, +200-600 items/day.
+
+TOP 8 FREE IMPROVEMENTS: 1 per-coin Google/Bing adapter (L; M for tier-A-only) · 2 fix minImportance + strip stock tickers (S) · 3 add ~40 verified RSS feeds (S) · 4 /coin/[ticker] page + search + source tabs (M) · 5 look parity: age-first, favicons (google s2), Important/Saved filters, 7-day scroll (M) · 6 Telegram wires via generalized t.me/s adapter (S-M) · 7 official project channels via CoinGecko map (M) · 8 Media/Social tabs: YouTube RSS (S) + Reddit via free OAuth script app (M).
+
+REDDIT: yes, but unauth .rss ≈ 1 req/min/IP (measured 429), .json 403 → free OAuth script app (100 QPM), filter score/flair, kind social, importance 10, own tab, never alert.
+BLOGS: yes (verified list: EF, Solana, Sui, Arbitrum, Optimism, Base, Lido, Avalanche, Kraken, a16z, Multicoin, Pantera, Hayes, Coin Metrics, Chainalysis, Vitalik, Optech, Bitcoin Core, Rekt, Ledger Insights, Discourse forums). Failed: Coinbase, Binance blog, Messari, Galaxy, Paradigm, Circle, Glassnode.
+YOUTUBE: yes, channel RSS no key. Verified IDs: Coin Bureau UCqK_GSMbpiV8spgD3ZGloSw; Bankless UCAl9Ld79qaZxp9JzEOwd3aA; The Defiant UCL0J4MLEdLP0-UyLu0hCktg; Altcoin Daily UCbLhGKVY-bJPcawebgtNfbw; InvestAnswers UClgJyzwGs-GyaNxUHcLZrkg; Pomp UCevXpeL8cNyAnww-NqJ4m2w; CoinDesk UC7TghOL755nBk7HelHoi9LQ; Bitcoin Magazine UCtOV5M-T3GcsJAq8QKaf0lg; Real Vision UCGXWKlq1Oxr3ddEtmKhAkPg; Crypto Banter UCN9Nj4tjXbVTLYWN0EKly_Q; DataDash UCCatR7nWbYrkVXdxXb4cGXw; The Block UC5sL8J5z4PLXjpUce0pnhPg; Paul Barron UC4VPa7EOvObpyCRI4YKRQRw; Unchained UCWiiMnsnw5Isc2PP1to9nNw.
+
+VERIFIED FEEDS (200 now): bitcoinmagazine.com/feed · cryptopotato.com/feed/ · newsbtc.com/feed/ · bitcoinist.com/feed/ · cryptobriefing.com/feed/ · ambcrypto.com/feed/ · u.today/rss · dailyhodl.com/feed/ · cryptonews.com/news/feed/ · blockworks.co/feed · dlnews.com/arc/outboundfeeds/rss/ · protos.com/feed/ · thedefiant.io/feed · unchainedcrypto.com/feed/ · coinjournal.net/feed/ · crypto.news/feed/ · coingape.com/feed/ · cryptopolitan.com/feed/ · finbold.com/feed/ · coinpedia.org/feed/ · watcher.guru/news/feed · news.bitcoin.com/feed/ · invezz.com/news/cryptocurrency/feed/ · cryptodaily.co.uk/feed (cap items) · 99bitcoins.com/feed/ · bitcoinethereumnews.com/feed/ · cryptoninjas.net/feed/ · zycrypto.com/feed/ · thecryptobasic.com/feed/ · tokenpost.com/rss · blockchain.news/rss · coinspeaker.com/feed/ · en.cryptonomist.ch/feed/ · thenewscrypto.com/feed/ · cryptonewsz.com/feed/ · bravenewcoin.com/feed · coincu.com/feed/ · coincentral.com/feed/ · nulltx.com/feed/ · cointrust.com/feed · en.bitcoinsistemi.com/feed/ · cointelegraph.com/rss/tag/{markets,regulation,bitcoin} · coindesk markets · decrypt.co/feed?category=defi.
+Mainstream: finance.yahoo.com/rss/topic/crypto · cnbc 10000664 · MarketWatch mw_marketpulse · fxstreet.com/rss/crypto · investing.com/rss/news_301.rss · feeds.bloomberg.com/crypto/news.rss · Google News site: queries · hnrss.
+Regulators: SEC pressreleases.rss (declared UA) · CFTC rssgp · Fed press_all · DOJ press · FCA · ESMA · ECB · Japan FSA.
+Dead: CryptoPanic RSS 410/API 403, CryptoCompare 401, CMC, Coinbase blog, Forbes, Nitter, Binance Square.
+
+WE DO BETTER: exchange announcements at 2-15 s, deterministic tags, 48h freshness, price reaction 1/5/15m, clustering, signal snapshots, Korean exchanges.
