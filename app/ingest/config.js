@@ -63,4 +63,25 @@ const RSS_FEEDS = [
   { name: 'blog:solana', url: 'https://solana.com/news/rss.xml', domain: 'solana.com', intervalMs: 600000 },
 ];
 
-module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, RSS_FEEDS };
+// Phase 3 step 6: generalized t.me/s/<channel> wire adapters (app/ingest/adapters/telegram.js).
+// Macro terms that move crypto markets even though the headline itself has no crypto word
+// (Walter_Bloomberg mixes crypto with general macro/TradFi headlines). Fix round F2: widened
+// recall (plurals, "federal reserve", "treasur(y|ies)", yields/payrolls/PCE/GDP/inflation/jobless
+// claims) — every term is \b-bounded so it never substring-matches inside an unrelated word
+// (e.g. \bFed\b correctly does not match "FEDEX").
+const MACRO_FILTER = '\\b(Fed|FOMC|CPI|rate (cut|hike)s?|Powell|federal reserve|treasur(y|ies)|SEC|ETF|tariffs?|yields?|payrolls?|PCE|GDP|inflation|jobless claims)\\b';
+// F1: only BWEnews (its own dedicated adapter, unaffected by this list) is a confirmed-live
+// source; the 7 new wire channels are curated but unverified — `verified: false` (the default
+// when omitted) makes their adapter `quietHealth: true` in telegram.js, same treatment as an
+// unverified officialSources.json entry (see official.js / health.js / scheduler.js).
+const TG_CHANNELS = [
+  { channel: 'TreeNewsFeed', tier: 2, intervalMs: 60000, verified: false },
+  { channel: 'Walter_Bloomberg', tier: 2, intervalMs: 60000, filter: CRYPTO_FILTER + '|' + MACRO_FILTER, verified: false },
+  { channel: 'WatcherGuru', tier: 2, intervalMs: 60000, verified: false },
+  { channel: 'wublockchainenglish', tier: 2, intervalMs: 60000, verified: false },
+  { channel: 'PeckShieldAlert', tier: 3, intervalMs: 120000, verified: false },
+  { channel: 'CertiKAlert', tier: 3, intervalMs: 120000, verified: false },
+  { channel: 'whale_alert_io', tier: 4, intervalMs: 120000, alertable: false, maxImportance: 10, verified: false },
+];
+
+module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS };

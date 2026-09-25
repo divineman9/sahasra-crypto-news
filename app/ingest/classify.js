@@ -15,6 +15,11 @@ const CATEGORY_ORDER = ['hack', 'delisting', 'etf', 'listing', 'regulatory', 'ma
 
 const IMPORTANCE_NEWS = { listing: 60, delisting: 60, hack: 85, etf: 70, regulatory: 70, maintenance: 30, other: 20 };
 const IMPORTANCE_EXCHANGE = { listing: 95, delisting: 90, maintenance: 40, other: 30 };
+// Official project sources (Phase 3 step 6): baseline importance by sourceName prefix
+// (gh:<org>/<repo> release, forum:<host> governance topic, blog:<host> post), used only when
+// the title doesn't itself hit a stronger category (hack/regulatory/etc. still promote normally
+// via IMPORTANCE_NEWS below).
+const OFFICIAL_IMPORTANCE = { gh: 40, forum: 30, blog: 35 };
 
 const OPINION_RE = /\b(price (analysis|prediction)|prediction|recap|here's why|what to expect|could|might|analyst(s)? (say|says|think)|opinion|explained|guide|morning minute|daily (brief|recap|wrap|digest)|weekly (recap|wrap|digest)|newsletter|roundup|round-up|live updates|this week in|the week in|markets wrap)\b/i;
 const LOWVALUE_RE = /\b(best crypto to (buy|invest)|next crypto to explode|top \d+ (alt)?coins|presale|(jumps?|rises?|drops?|falls?|surges?|gains?|declines?|rebounds?|slips?|climbs?) (nearly |over |about )?\d+(\.\d+)?%|in (one|four|24) hours?|price (analysis|outlook|prediction|news|eyes|targets|builds|sets up))(?![A-Za-z0-9])/i;
@@ -122,6 +127,15 @@ function sentimentFor(category, title) {
   return 'neutral';
 }
 
+// F6 (Phase 3 step 6 fix round): every return path — the two early returns below included — must
+// go through the maxImportance cap, so this is the single place that applies it.
+function withCap(raw, result) {
+  if (typeof raw.maxImportance === 'number') {
+    result.importance = Math.min(result.importance, raw.maxImportance);
+  }
+  return result;
+}
+
 function classify(raw, tickers) {
   const kind = raw.kind || 'news';
   const title = raw.title || '';
@@ -132,7 +146,7 @@ function classify(raw, tickers) {
 
   // Binance Alpha is not a spot listing — downgrade listings only, never a hack/delisting/other material event.
   if (ALPHA_LISTING_RE.test(title) && (category === 'listing' || category === 'other' || category == null)) {
-    return { category: 'other', importance: 30, sentiment: 'neutral' };
+    return withCap(raw, { category: 'other', importance: 30, sentiment: 'neutral' });
   }
 
   let isPromo = false;
@@ -145,7 +159,7 @@ function classify(raw, tickers) {
 
   // Tokenized-stock instruments are not crypto catalysts.
   if (STOCK_PERP_RE.test(title) && category !== 'hack') {
-    return { category: 'other', importance: 30, sentiment: 'neutral' };
+    return withCap(raw, { category: 'other', importance: 30, sentiment: 'neutral' });
   }
 
   // Validator C1: product-level exchange notices should not get full listing/delisting scores
@@ -183,6 +197,15 @@ function classify(raw, tickers) {
     } else {
       importance = IMPORTANCE_EXCHANGE[category] !== undefined ? IMPORTANCE_EXCHANGE[category] : 30;
     }
+  } else if (kind === 'official') {
+    // Still promoted by the usual category regexes (hack/regulatory/etc.); only the "nothing
+    // special detected" (category 'other') case falls back to the per-source-type baseline.
+    if (category !== 'other' && IMPORTANCE_NEWS[category] !== undefined) {
+      importance = IMPORTANCE_NEWS[category];
+    } else {
+      const prefix = String(raw.sourceName || '').split(':')[0];
+      importance = OFFICIAL_IMPORTANCE[prefix] !== undefined ? OFFICIAL_IMPORTANCE[prefix] : 30;
+    }
   } else if (isPhishing) {
     importance = 40;
   } else {
@@ -202,7 +225,10 @@ function classify(raw, tickers) {
   } else {
     sentiment = sentimentFor(category, title);
   }
-  return { category, importance, sentiment };
+  // Per-item importance cap (Phase 3 step 6: whale_alert_io telegram items force importance <=10
+  // via a per-channel `maxImportance` option on the raw item) — generic, so any adapter can use
+  // it. Applied last, in withCap, so it covers this return path and the two early returns above.
+  return withCap(raw, { category, importance, sentiment });
 }
 
 module.exports = { classify };

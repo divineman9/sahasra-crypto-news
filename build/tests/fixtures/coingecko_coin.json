@@ -1,0 +1,21 @@
+{
+  "id": "bitcoin",
+  "symbol": "btc",
+  "name": "Bitcoin",
+  "links": {
+    "homepage": ["https://bitcoin.org/", "", ""],
+    "blockchain_site": ["https://blockstream.info/", "", "", "", "", "", "", "", "", ""],
+    "official_forum_url": ["https://bitcointalk.org/", "", ""],
+    "chat_url": ["", "", ""],
+    "announcement_url": ["https://bitcointalk.org/index.php?topic=1.0", ""],
+    "twitter_screen_name": "bitcoin",
+    "facebook_username": "",
+    "bitcointalk_thread_identifier": null,
+    "telegram_channel_identifier": "",
+    "subreddit_url": "https://www.reddit.com/r/Bitcoin/",
+    "repos_url": {
+      "github": ["https://github.com/bitcoin/bitcoin", "https://github.com/bitcoin/bips"],
+      "bitbucket": []
+    }
+  }
+}

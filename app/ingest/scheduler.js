@@ -50,7 +50,7 @@ class Scheduler {
   health() {
     const out = [];
     for (const { adapter, state } of this.adapters.values()) {
-      out.push({ name: adapter.name, tier: adapter.tier, intervalMs: adapter.intervalMs, ...state });
+      out.push({ name: adapter.name, tier: adapter.tier, intervalMs: adapter.intervalMs, quietHealth: !!adapter.quietHealth, ...state });
     }
     return out;
   }
@@ -197,6 +197,13 @@ class Scheduler {
   _backoffUntil(adapter, state, err) {
     const now = Date.now();
     const retry = err.retryAfterMs || null;
+    // Unverified (quietHealth) sources: once persistently failing, retry at most once every 6h
+    // instead of the normal <=10 min ceiling. This lives here (not in a health.js side-channel)
+    // so it can never be raced or overwritten by the generic backoff computed on every failed
+    // run below — see the Phase 3 step 6 fix-round review (B1) for the bug this replaced.
+    if (adapter.quietHealth && state.consecutiveErrors >= (adapter.quietFailThreshold || 6)) {
+      return now + Math.max(retry || 0, 6 * 3600 * 1000);
+    }
     if (err.status === 403 || err.status === 418) return now + Math.max(retry || 0, 10 * 60 * 1000);
     if (err.status === 429) return now + Math.max(retry || 0, 60 * 1000);
     return now + Math.min(adapter.intervalMs * 2 ** state.consecutiveErrors, 10 * 60 * 1000);

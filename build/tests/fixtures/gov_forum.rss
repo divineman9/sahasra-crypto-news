@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>Uniswap Governance</title>
+  <link>https://gov.uniswap.org/</link>
+  <description>Uniswap community governance forum</description>
+  <item>
+    <title>[RFC] Deploy Uniswap v4 on a new chain</title>
+    <link>https://gov.uniswap.org/t/rfc-deploy-v4/1001</link>
+    <pubDate>{{RECENT_1}}</pubDate>
+  </item>
+  <item>
+    <title>Temp Check: Reduce protocol fee parameter</title>
+    <link>https://gov.uniswap.org/t/temp-check-fee/1002</link>
+    <pubDate>{{RECENT_2}}</pubDate>
+  </item>
+  <item>
+    <title>Snapshot vote live: treasury grant allocation</title>
+    <link>https://gov.uniswap.org/t/snapshot-treasury/1003</link>
+    <pubDate>{{RECENT_3}}</pubDate>
+  </item>
+  <item>
+    <title>GM everyone, happy Friday!</title>
+    <link>https://gov.uniswap.org/t/gm-friday/1004</link>
+    <pubDate>{{RECENT_4}}</pubDate>
+  </item>
+  <item>
+    <title>Welcome to the forum, please introduce yourself</title>
+    <link>https://gov.uniswap.org/t/welcome/1005</link>
+    <pubDate>{{RECENT_5}}</pubDate>
+  </item>
+  <item>
+    <title>[RFC] Old proposal outside the 7-day window</title>
+    <link>https://gov.uniswap.org/t/old-rfc/999</link>
+    <pubDate>{{OLD}}</pubDate>
+  </item>
+</channel>
+</rss>

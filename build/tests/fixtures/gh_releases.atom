@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-US">
+  <id>tag:github.com,2008:Repository/1/bitcoin</id>
+  <link type="text/html" rel="alternate" href="https://github.com/bitcoin/bitcoin/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/bitcoin/bitcoin/releases.atom"/>
+  <title>Release notes from bitcoin</title>
+  <updated>{{RECENT_1}}</updated>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/v1.2.0</id>
+    <updated>{{RECENT_1}}</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/bitcoin/bitcoin/releases/tag/v1.2.0"/>
+    <title>v1.2.0</title>
+    <content type="html">Stable point release with bug fixes.</content>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/v1.3.0-rc1</id>
+    <updated>{{RECENT_2}}</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/bitcoin/bitcoin/releases/tag/v1.3.0-rc1"/>
+    <title>v1.3.0-rc1</title>
+    <content type="html">Release candidate for testing.</content>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/nightly-build</id>
+    <updated>{{RECENT_3}}</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/bitcoin/bitcoin/releases/tag/nightly-build"/>
+    <title>nightly-build</title>
+    <content type="html">Automated nightly build.</content>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/v1.1.0</id>
+    <updated>{{OLD}}</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/bitcoin/bitcoin/releases/tag/v1.1.0"/>
+    <title>v1.1.0</title>
+    <content type="html">Older stable release, outside the 7-day window.</content>
+  </entry>
+</feed>
