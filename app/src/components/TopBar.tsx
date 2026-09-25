@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFeedStore } from "@/store/useFeedStore";
 import { SahasraLotus } from "@/components/SahasraLotus";
+import { SearchBox } from "@/components/SearchBox";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"] as const;
@@ -36,10 +37,11 @@ export function TopBar() {
 
   return (
     <header className="sahasra-header grid grid-cols-[1fr_auto_1fr] items-center border border-slate-800 rounded px-3 py-2">
-      {/* left: quiet counterweight — date + what this is */}
-      <div className="flex flex-col gap-1 justify-self-start font-mono text-[10px] tracking-[0.22em] text-slate-500">
+      {/* left: quiet counterweight — date + what this is + search */}
+      <div className="flex flex-col gap-1.5 justify-self-start font-mono text-[10px] tracking-[0.22em] text-slate-500">
         <span className="text-slate-400">{today ?? ""}</span>
         <span>CRYPTO · NEWS · TERMINAL</span>
+        <SearchBox />
       </div>
 
       {/* centre: emblem, wordmark, tagline */}

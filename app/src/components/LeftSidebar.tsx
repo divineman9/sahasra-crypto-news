@@ -22,6 +22,8 @@ export function LeftSidebar() {
   const setFilter = useFeedStore((s) => s.setFilter);
   const addTicker = useFeedStore((s) => s.addTicker);
   const removeTicker = useFeedStore((s) => s.removeTicker);
+  const hideLowGnews = useFeedStore((s) => s.hideLowGnews);
+  const setHideLowGnews = useFeedStore((s) => s.setHideLowGnews);
   const [input, setInput] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
@@ -33,10 +35,10 @@ export function LeftSidebar() {
   const counts = useMemo(
     () =>
       FILTERS.reduce<Record<string, number>>((acc, f) => {
-        acc[f.key] = visibleStories(posts, f.key, portfolio, now).length;
+        acc[f.key] = visibleStories(posts, f.key, portfolio, now, hideLowGnews).length;
         return acc;
       }, {}),
-    [posts, portfolio, now]
+    [posts, portfolio, now, hideLowGnews]
   );
 
   const submit = () => {
@@ -71,6 +73,16 @@ export function LeftSidebar() {
       <p className="px-2 text-[10px] leading-snug text-slate-500">
         Hot = importance ≥70 &amp; ≤48h · Rising = ≥2 sources in 60 min · Exchange = exchange / new-market sources
       </p>
+
+      <label className="flex items-center gap-2 px-2 text-[11px] text-slate-400 select-none">
+        <input
+          type="checkbox"
+          checked={hideLowGnews}
+          onChange={(e) => setHideLowGnews(e.target.checked)}
+          className="h-3 w-3 accent-emerald-500"
+        />
+        Hide low-importance Google News
+      </label>
 
       <div className="flex flex-col gap-2">
         <h2 className="text-[10px] uppercase tracking-wider text-slate-500">Portfolio</h2>

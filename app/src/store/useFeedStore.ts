@@ -19,6 +19,8 @@ interface FeedState {
   paused: boolean;
   nextCursor: string | null | undefined;
   loadingOlder: boolean;
+  hideLowGnews: boolean;
+  setHideLowGnews(v: boolean): void;
   hydrate(posts: PostDTO[]): void;
   mergeSnapshot(posts: PostDTO[]): void;
   upsertPost(post: PostDTO, isNew: boolean): void;
@@ -75,6 +77,7 @@ export const useFeedStore = create<FeedState>()(
       paused: false,
       nextCursor: undefined,
       loadingOlder: false,
+      hideLowGnews: true,
 
       hydrate: (incoming) => {
         if (incoming.length === 0) return;
@@ -150,6 +153,7 @@ export const useFeedStore = create<FeedState>()(
 
       setNextCursor: (c) => set({ nextCursor: c }),
       setLoadingOlder: (b) => set({ loadingOlder: b }),
+      setHideLowGnews: (v) => set({ hideLowGnews: v }),
       setFilter: (f) => set({ filter: f }),
       setWsStatus: (s) => set({ wsStatus: s }),
 
@@ -198,7 +202,7 @@ export const useFeedStore = create<FeedState>()(
     }),
     {
       name: "cnt-portfolio",
-      partialize: (s) => ({ portfolio: s.portfolio, myVotes: s.myVotes }),
+      partialize: (s) => ({ portfolio: s.portfolio, myVotes: s.myVotes, hideLowGnews: s.hideLowGnews }),
     }
   )
 );

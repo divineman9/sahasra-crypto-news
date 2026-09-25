@@ -1,4 +1,5 @@
 import type { FilterKey, PostDTO } from "@/lib/types";
+import { hideLowImportanceGnews } from "@/lib/sourceTab";
 
 export type { FilterKey };
 
@@ -89,9 +90,11 @@ export function visibleStories(
   posts: PostDTO[],
   f: FilterKey,
   portfolio: string[],
-  now: number
+  now: number,
+  hideLowGnews = false
 ): StoryView[] {
-  let views = groupStories(posts).filter((v) => matchesStory(v, f, now));
+  const base = hideLowGnews ? posts.filter((p) => !hideLowImportanceGnews(p)) : posts;
+  let views = groupStories(base).filter((v) => matchesStory(v, f, now));
   if (portfolio.length > 0) {
     const set = new Set(portfolio);
     views = views.filter((v) => v.members.some((m) => m.instruments.some((i) => set.has(i.ticker))));

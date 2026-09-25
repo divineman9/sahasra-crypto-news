@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, ExternalLink, X } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, Plus, X } from "lucide-react";
 import type { PostDTO } from "@/lib/types";
 import { useFeedStore } from "@/store/useFeedStore";
 import { useLabel } from "@/hooks/useLabel";
@@ -102,16 +102,24 @@ export function PostDetail({ post }: { post: PostDTO }) {
       </div>
 
       {post.instruments.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {post.instruments.map((inst) => (
-            <button
-              key={inst.ticker}
-              onClick={() => addTicker(inst.ticker)}
-              title="add to portfolio"
-              className={`border px-1.5 py-0.5 ${SENTIMENT_CHIP[post.sentiment]} hover:brightness-125`}
-            >
-              ${inst.ticker} · {inst.name}
-            </button>
+            <span key={inst.ticker} className="inline-flex items-center gap-1">
+              <Link
+                href={`/coin/${inst.ticker}`}
+                title={`Open ${inst.ticker} coin page`}
+                className={`border px-1.5 py-0.5 ${SENTIMENT_CHIP[post.sentiment]} hover:brightness-125`}
+              >
+                ${inst.ticker} · {inst.name}
+              </Link>
+              <button
+                onClick={() => addTicker(inst.ticker)}
+                title="add to portfolio"
+                className="border border-slate-700 px-1 py-0.5 text-slate-500 hover:text-emerald-400"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </span>
           ))}
         </div>
       ) : null}

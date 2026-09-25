@@ -11,6 +11,7 @@ export function NewsFeed() {
   const posts = useFeedStore((s) => s.posts);
   const filter = useFeedStore((s) => s.filter);
   const portfolio = useFeedStore((s) => s.portfolio);
+  const hideLowGnews = useFeedStore((s) => s.hideLowGnews);
   const pendingCount = useFeedStore((s) => s.pending.length);
   const setPaused = useFeedStore((s) => s.setPaused);
   const flushPending = useFeedStore((s) => s.flushPending);
@@ -35,8 +36,8 @@ export function NewsFeed() {
   useEffect(() => () => setPaused(false), [setPaused]);
 
   const stories = useMemo(
-    () => visibleStories(posts, filter, portfolio, now),
-    [posts, filter, portfolio, now]
+    () => visibleStories(posts, filter, portfolio, now, hideLowGnews),
+    [posts, filter, portfolio, now, hideLowGnews]
   );
 
   return (

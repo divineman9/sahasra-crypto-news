@@ -71,12 +71,15 @@ function FeedRowImpl({ story, now }: { story: StoryView; now: number }) {
       {/* 4. tickers */}
       <div className="min-w-0 flex items-center gap-1">
         {tickers.map((t) => (
-          <span
+          <Link
             key={t.ticker}
-            className={`shrink-0 rounded border px-1 text-[10px] ${SENTIMENT_CHIP[post.sentiment]}`}
+            href={`/coin/${t.ticker}`}
+            onClick={(e) => e.stopPropagation()}
+            title={`Open ${t.ticker} coin page`}
+            className={`shrink-0 rounded border px-1 text-[10px] hover:brightness-125 ${SENTIMENT_CHIP[post.sentiment]}`}
           >
             ${t.ticker}
-          </span>
+          </Link>
         ))}
         {extraTickers > 0 && (
           <span className="shrink-0 text-slate-500">+{extraTickers}</span>
