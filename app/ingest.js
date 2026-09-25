@@ -27,6 +27,8 @@ const bwenews = require('./ingest/adapters/bwenews');
 const upbit = require('./ingest/adapters/upbit');
 const rss = require('./ingest/adapters/rss');
 const gnews = require('./ingest/adapters/gnews');
+const telegram = require('./ingest/adapters/telegram');
+const official = require('./ingest/adapters/official');
 const { loadWatchBases } = require('./ingest/watchlist');
 
 const TIER_CACHE_FILE = path.join(__dirname, 'ingest', 'cache', 'gnews_tiers.json');
@@ -130,6 +132,8 @@ async function main() {
     ...symbols.make({ prisma }),
     ...rss.make(),
     gnews.make({ getTierA: () => loadWatchBases(), getTierB: () => tierBList, getTierC: () => tierCList }),
+    ...(process.env.TG_WIRES_ENABLED !== '0' ? telegram.make() : []),
+    ...(process.env.OFFICIAL_ENABLED !== '0' ? official.make() : []),
   ];
 
   let futuresFirstRun = true;
