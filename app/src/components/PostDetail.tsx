@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, ExternalLink, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, Plus, Star, X } from "lucide-react";
 import type { PostDTO } from "@/lib/types";
 import { useFeedStore } from "@/store/useFeedStore";
 import { useLabel } from "@/hooks/useLabel";
@@ -13,6 +13,7 @@ import {
   fmtAge,
   groupStories,
   isFresh,
+  isSavedStory,
 } from "@/lib/filters";
 import {
   CATEGORY_STYLE,
@@ -30,6 +31,8 @@ function minutesBetween(aIso: string, bIso: string): number {
 export function PostDetail({ post }: { post: PostDTO }) {
   const posts = useFeedStore((s) => s.posts);
   const addTicker = useFeedStore((s) => s.addTicker);
+  const savedList = useFeedStore((s) => s.saved);
+  const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const { setLabel, busy } = useLabel(post);
   const [now, setNow] = useState<number>(() => Date.now());
 
@@ -45,6 +48,14 @@ export function PostDetail({ post }: { post: PostDTO }) {
   const siblings = posts
     .filter((p) => (p.storyId ?? p.id) === storyKey)
     .sort((a, b) => (a.firstSeenAt === b.firstSeenAt ? (a.id < b.id ? -1 : 1) : a.firstSeenAt < b.firstSeenAt ? -1 : 1));
+
+  // F2 fix round: same story-aware save logic as FeedRow's star — "saved" means any clustered
+  // source of this story is bookmarked, not just the exact post this page happens to be showing,
+  // and toggling clears/sets consistently with that (see toggleSavedMembers in storyFilters.js).
+  // Falls back to `[post]` when there are no siblings loaded yet, matching isSavedStory's own
+  // fallback for an empty members list.
+  const storyForSave = { post, members: siblings.length > 0 ? siblings : [post] };
+  const saved = isSavedStory(storyForSave, savedList);
 
   const postTickers = new Set(post.instruments.map((i) => i.ticker));
   const related = groupStories(
@@ -141,6 +152,16 @@ export function PostDetail({ post }: { post: PostDTO }) {
       ) : null}
 
       <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={() => toggleSaved(storyForSave)}
+          aria-pressed={saved}
+          aria-label={saved ? "Remove from saved" : "Save"}
+          className={`inline-flex items-center gap-1 border px-2 py-0.5 ${
+            saved ? "border-amber-500 text-amber-400" : "border-slate-600 text-slate-400 hover:text-amber-400"
+          }`}
+        >
+          <Star className="h-3 w-3" fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save"}
+        </button>
         <button
           onClick={() => setLabel("catalyst")}
           disabled={busy}

@@ -1,7 +1,9 @@
 import type { FilterKey, PostDTO } from "@/lib/types";
 import { hideLowImportanceTier4 } from "@/lib/sourceTab";
+import { isImportantStory, isSavedStory, toggleSavedMembers } from "@/lib/storyFilters";
 
 export type { FilterKey };
+export { isImportantStory, isSavedStory, toggleSavedMembers };
 
 export interface StoryView {
   post: PostDTO;
@@ -67,7 +69,14 @@ export function groupStories(posts: PostDTO[]): StoryView[] {
   return views;
 }
 
-export function matchesStory(v: StoryView, f: FilterKey, now: number): boolean {
+// `savedIds` is only consulted by the "saved" case — every other filter ignores it, so callers
+// that never pass one (existing call sites, other suites) keep working unchanged.
+export function matchesStory(
+  v: StoryView,
+  f: FilterKey,
+  now: number,
+  savedIds: Iterable<string> = []
+): boolean {
   switch (f) {
     case "all":
       return true;
@@ -81,6 +90,13 @@ export function matchesStory(v: StoryView, f: FilterKey, now: number): boolean {
       return v.post.sentiment === "bearish";
     case "exchange":
       return v.tier1;
+    // Important/Saved are deliberately freshness-agnostic (unlike Hot/Rising): a >48h-old post
+    // that's still highly important, or that the user bookmarked, should keep showing once it's
+    // loaded into the store (via the 7-day "load older" pagination) — see NewsFeed/store cap notes.
+    case "important":
+      return isImportantStory(v);
+    case "saved":
+      return isSavedStory(v, savedIds);
     default:
       return true;
   }
@@ -94,11 +110,18 @@ export function visibleStories(
   // Named for the persisted store key (`hideLowGnews`, kept as-is so existing users' localStorage
   // isn't migrated) — the predicate it drives was generalised in F2 to every tier-4 source, not
   // just Google News.
-  hideLowGnews = false
+  hideLowGnews = false,
+  savedIds: Iterable<string> = []
 ): StoryView[] {
-  const base = hideLowGnews ? posts.filter((p) => !hideLowImportanceTier4(p)) : posts;
-  let views = groupStories(base).filter((v) => matchesStory(v, f, now));
-  if (portfolio.length > 0) {
+  // F4 fix round: "Saved" is exempt from both the hide-low-tier-4 toggle and portfolio narrowing —
+  // a bookmark is a deliberate per-item choice, so a low-importance tier-4 post or a coin outside
+  // the portfolio the user explicitly starred should still show up under Saved. Every caller
+  // (NewsFeed's row list and LeftSidebar's counts) goes through this one function, so the exemption
+  // can't drift between the two.
+  const exemptSaved = f === "saved";
+  const base = !exemptSaved && hideLowGnews ? posts.filter((p) => !hideLowImportanceTier4(p)) : posts;
+  let views = groupStories(base).filter((v) => matchesStory(v, f, now, savedIds));
+  if (!exemptSaved && portfolio.length > 0) {
     const set = new Set(portfolio);
     views = views.filter((v) => v.members.some((m) => m.instruments.some((i) => set.has(i.ticker))));
   }

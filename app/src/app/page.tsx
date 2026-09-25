@@ -17,14 +17,21 @@ export default function Page() {
   return (
     <div className="flex h-screen flex-col p-4">
       <TopBar />
-      <div className="mt-2 grid grid-cols-[220px_minmax(0,1fr)_280px] min-h-0 flex-1 border border-slate-800 rounded">
+      {/* V1 fix round: the shell used to be a fixed 220px + 1fr + 280px grid at every width — at
+          1024px that left the feed only ~500px, and FeedRow's own fixed columns + inline ticker
+          chips ate nearly all of it, collapsing the title to ~0 width. Now: below `lg` (1024px) the
+          left sidebar narrows to 180px; below `xl` (1280px) the right sidebar (Prices/Trending) is
+          hidden entirely rather than squeezing the feed — it's still one click away at ≥1280px, and
+          hiding it (vs. moving it below the feed) avoids splitting the shell's fixed height across
+          two unevenly-sized scroll regions. */}
+      <div className="mt-2 grid grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_280px] min-h-0 flex-1 border border-slate-800 rounded">
         <aside className="overflow-y-auto border-r border-slate-800">
           <LeftSidebar />
         </aside>
-        <main className="overflow-y-auto">
+        <main className="min-w-0 overflow-y-auto">
           <NewsFeed />
         </main>
-        <aside className="overflow-y-auto border-l border-slate-800">
+        <aside className="hidden overflow-y-auto border-l border-slate-800 xl:block">
           <RightSidebar />
         </aside>
       </div>

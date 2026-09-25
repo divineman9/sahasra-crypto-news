@@ -3,7 +3,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { PostDTO, VoteType, FilterKey } from "@/lib/types";
+import type { StoryView } from "@/lib/filters";
 import { MOCK_POSTS } from "@/lib/mockPosts";
+import { toggleSavedMembers, MAX_SAVED_IDS } from "@/lib/storyFilters";
+
+// The minimal shape toggleSaved actually needs — a full StoryView works too (it's a superset), but
+// callers (PostDetail) that only have a single post + its sibling posts, not a real StoryView,
+// shouldn't have to fabricate the other StoryView fields (count/maxImportance/tier1) just to call it.
+export type SavedToggleTarget = Pick<StoryView, "post" | "members">;
 
 type WsStatus = "connecting" | "open" | "closed";
 
@@ -20,7 +27,16 @@ interface FeedState {
   nextCursor: string | null | undefined;
   loadingOlder: boolean;
   hideLowGnews: boolean;
+  saved: string[];
+  expandedId: string | null;
+  // Set when a "load older" fetch gets a 400 (its cursor row no longer exists — e.g. it was
+  // filtered/deleted between page loads): distinct from nextCursor===null (genuine end of the
+  // 7-day archive) so NewsFeed can tell the two apart (F7 fix round).
+  cursorStale: boolean;
   setHideLowGnews(v: boolean): void;
+  toggleSaved(story: SavedToggleTarget): void;
+  toggleExpanded(id: string): void;
+  setCursorStale(v: boolean): void;
   hydrate(posts: PostDTO[]): void;
   mergeSnapshot(posts: PostDTO[]): void;
   upsertPost(post: PostDTO, isNew: boolean): void;
@@ -36,7 +52,11 @@ interface FeedState {
   recordMyVote(id: string, type: VoteType): void;
 }
 
-const MAX_POSTS = 1000;
+// Bumped from 1000 -> 3000 for step 8's 7-day infinite scroll: the feed now pages back a full week
+// instead of stopping at 48h, so the in-memory cap has to hold a correspondingly larger window.
+// Exported so NewsFeed can detect "we hit the cap" (posts.length >= MAX_POSTS) and stop auto-loading
+// rather than silently discarding older pages it just fetched.
+export const MAX_POSTS = 3000;
 const FLASH_MS = 5000;
 const MAX_PENDING = 200;
 const MAX_MYVOTES = 2000;
@@ -78,6 +98,9 @@ export const useFeedStore = create<FeedState>()(
       nextCursor: undefined,
       loadingOlder: false,
       hideLowGnews: true,
+      saved: [],
+      expandedId: null,
+      cursorStale: false,
 
       hydrate: (incoming) => {
         if (incoming.length === 0) return;
@@ -156,6 +179,19 @@ export const useFeedStore = create<FeedState>()(
       setHideLowGnews: (v) => set({ hideLowGnews: v }),
       setFilter: (f) => set({ filter: f }),
       setWsStatus: (s) => set({ wsStatus: s }),
+      setCursorStale: (v) => set({ cursorStale: v }),
+
+      // F2 fix round: delegates to the same pure toggleSavedMembers() helper the Saved filter's
+      // isSavedStory() predicate is built to agree with — "any member saved" reads as saved, so
+      // toggling clears every member's id, not just whichever one the id-only version used to touch.
+      toggleSaved: (story) => {
+        const { saved } = get();
+        set({ saved: toggleSavedMembers(saved, story, MAX_SAVED_IDS) });
+      },
+
+      toggleExpanded: (id) => {
+        set((s) => ({ expandedId: s.expandedId === id ? null : id }));
+      },
 
       addTicker: (t) => {
         const clean = t.toUpperCase().trim().replace(/[^A-Z0-9]/g, "");
@@ -202,7 +238,12 @@ export const useFeedStore = create<FeedState>()(
     }),
     {
       name: "cnt-portfolio",
-      partialize: (s) => ({ portfolio: s.portfolio, myVotes: s.myVotes, hideLowGnews: s.hideLowGnews }),
+      partialize: (s) => ({
+        portfolio: s.portfolio,
+        myVotes: s.myVotes,
+        hideLowGnews: s.hideLowGnews,
+        saved: s.saved,
+      }),
     }
   )
 );

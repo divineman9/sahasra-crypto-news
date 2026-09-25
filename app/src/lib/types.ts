@@ -1,7 +1,7 @@
 export type Sentiment = "bullish" | "bearish" | "neutral";
 export type Kind = "news" | "exchange" | "regulator" | "symbol" | "media" | "blog" | "official" | "social";
 export type VoteType = "bullish" | "bearish" | "important" | "toxic";
-export type FilterKey = "all" | "hot" | "rising" | "bullish" | "bearish" | "exchange";
+export type FilterKey = "all" | "hot" | "rising" | "bullish" | "bearish" | "exchange" | "important" | "saved";
 export type Category = "listing" | "delisting" | "hack" | "etf" | "regulatory" | "maintenance" | "other";
 export type UserLabel = "catalyst" | "dismiss";
 

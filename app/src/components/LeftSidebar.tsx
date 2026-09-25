@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LayoutList, Flame, TrendingUp, ArrowUpRight, ArrowDownRight, Building2, X, Plus } from "lucide-react";
+import {
+  LayoutList,
+  Flame,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  Building2,
+  X,
+  Plus,
+  AlertCircle,
+  Bookmark,
+} from "lucide-react";
 import { useFeedStore } from "@/store/useFeedStore";
 import { visibleStories } from "@/lib/filters";
 import type { FilterKey } from "@/lib/types";
@@ -10,9 +21,11 @@ const FILTERS: { key: FilterKey; label: string; icon: typeof LayoutList }[] = [
   { key: "all", label: "All", icon: LayoutList },
   { key: "hot", label: "Hot", icon: Flame },
   { key: "rising", label: "Rising", icon: TrendingUp },
+  { key: "important", label: "Important", icon: AlertCircle },
   { key: "exchange", label: "Exchange", icon: Building2 },
   { key: "bullish", label: "Bullish", icon: ArrowUpRight },
   { key: "bearish", label: "Bearish", icon: ArrowDownRight },
+  { key: "saved", label: "Saved", icon: Bookmark },
 ];
 
 export function LeftSidebar() {
@@ -24,6 +37,7 @@ export function LeftSidebar() {
   const removeTicker = useFeedStore((s) => s.removeTicker);
   const hideLowGnews = useFeedStore((s) => s.hideLowGnews);
   const setHideLowGnews = useFeedStore((s) => s.setHideLowGnews);
+  const saved = useFeedStore((s) => s.saved);
   const [input, setInput] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
@@ -32,13 +46,15 @@ export function LeftSidebar() {
     return () => clearInterval(id);
   }, []);
 
+  const savedSet = useMemo(() => new Set(saved), [saved]);
+
   const counts = useMemo(
     () =>
       FILTERS.reduce<Record<string, number>>((acc, f) => {
-        acc[f.key] = visibleStories(posts, f.key, portfolio, now, hideLowGnews).length;
+        acc[f.key] = visibleStories(posts, f.key, portfolio, now, hideLowGnews, savedSet).length;
         return acc;
       }, {}),
-    [posts, portfolio, now, hideLowGnews]
+    [posts, portfolio, now, hideLowGnews, savedSet]
   );
 
   const submit = () => {
@@ -71,7 +87,8 @@ export function LeftSidebar() {
       </nav>
 
       <p className="px-2 text-[10px] leading-snug text-slate-500">
-        Hot = importance ≥70 &amp; ≤48h · Rising = ≥2 sources in 60 min · Exchange = exchange / new-market sources
+        Hot = importance ≥70 &amp; ≤48h · Rising = ≥2 sources in 60 min · Important = importance ≥50
+        (any age) · Exchange = exchange / new-market sources · Saved = bookmarked
       </p>
 
       <label className="flex items-center gap-2 px-2 text-[11px] text-slate-400 select-none">
