@@ -15,7 +15,7 @@ Astra (ChatGPT) has not reviewed any of this yet. See "Still owed" at the end.
 | 6 | `696d7b5`, `4c09e25` | 7 Telegram wire channels and 27 official sources (19 GitHub release feeds, 8 governance forums). Unverified sources never page Discord. |
 | 7 | `2ccc760` | YouTube Media tab (14 channels) and Reddit Social tab (off until you add keys). Health window scales with each source's poll interval. |
 | 8 | `f4dfa31` | Age-first feed rows, favicons, wider headlines, expandable rows, Important and Saved filters, infinite scroll back 7 days. |
-| Final fixes | (last commit) | GitHub keeps only the real latest stable release, dashboard news file split so older chips can't drop out, Telegram wires slowed, tagger runs on video/Reddit/official items, outage alerts summarised, server-side hide filter, `.env.example` documents every setting. |
+| Final fixes | `bd5d671` | GitHub keeps only the real latest stable release, dashboard news file split so older chips can't drop out, Telegram wires slowed, tagger runs on video/Reddit/official items, outage alerts summarised, server-side hide filter, `.env.example` documents every setting. |
 
 Test suites: 25 suites run by `build/tests/run_all_tests.sh`. In the cloud container, every suite passes except `supervisor` (needs Windows `tasklist`) and `details` (binance.com is blocked there). Both should pass on your machine as before.
 
