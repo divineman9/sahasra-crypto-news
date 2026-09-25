@@ -9,7 +9,7 @@ const NEWS_LIVE_JSON = process.env.NEWS_LIVE_JSON || 'D:\\claude projects\\crypt
 const KEEP_DAYS = 7;
 
 // Regulator feeds are general; keep only crypto-related press releases.
-const CRYPTO_FILTER = '\\b(crypto|bitcoin|ether(eum)?|digital asset|stablecoin|blockchain|tokens?|virtual currenc|defi|mixer|NFT)';
+const CRYPTO_FILTER = '\\b(crypto|bitcoin|ether(eum)?\\b|digital asset|stablecoin|blockchain|tokens?\\b|tokeni[sz]ed\\b|tokeni[sz]ation\\b|virtual currenc|defi\\b|decentrali[sz]ed finance|mixer|NFT)';
 
 const RSS_FEEDS = [
   { name: 'rss:cointelegraph', url: 'https://cointelegraph.com/rss', domain: 'cointelegraph.com' },
@@ -63,4 +63,4 @@ const RSS_FEEDS = [
   { name: 'blog:solana', url: 'https://solana.com/news/rss.xml', domain: 'solana.com', intervalMs: 600000 },
 ];
 
-module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, RSS_FEEDS };
+module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, RSS_FEEDS };
