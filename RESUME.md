@@ -1,4 +1,4 @@
-# Sahasra — where we stopped (2026-09-25, ~2:10 PM ET)
+# Sahasra — where we stopped (2026-09-25, ~2:40 PM ET — handed off to the GitHub cloud session)
 
 > Sahasra — "the final path to the Oneness". A free, self-hosted CryptoPanic-style crypto news terminal whose main job is
 > **per-coin altcoin news for the ~500 Binance perps watched by the ShivaShakthi base-break dashboard**.
@@ -29,10 +29,13 @@
 **Phase 3 step 3: +43 RSS feeds** (49 total; regulators CFTC/Fed/DOJ/ECB crypto-filtered; blogs Kraken/Chainalysis/Ethereum/Solana).
 - Code DONE by GLM: `app/ingest/config.js` (feeds + `CRYPTO_FILTER`), `app/ingest/adapters/rss.js` (per-feed tier/kind/intervalMs/maxItems/filter/titlePrefix). Backups `*.pre_f3`.
 - Tests: `build/tests/p3_step3_feeds.test.js` 12/12 PASS; already added to `run_all_tests.sh`.
+- Full suite: **ALL SUITES PASS (20 suites)** after step 3 code.
+- Fable review of step 3 was STARTED but stopped mid-way (user moved work to the cloud session) — no verdict yet.
 - **Next actions:**
-  1. Run the full suite `bash build/tests/run_all_tests.sh` (was interrupted before finishing).
-  2. Fable review of step 3 (config.js, rss.js vs `.pre_f3`; check load of 49 feeds, health alarms for tier-3 feeds, duplicate stories vs clustering).
-  3. Deploy (restart collector), then `node build/tests/coverage_probe.js`.
+  1. Fable review of step 3 (config.js, rss.js vs `.pre_f3`). MOST IMPORTANT question: with 49 feeds, can a slow/failing tier-3 feed make `news_live.json` health `ok:false` (newsFile.js buildHealth / health.js) and thereby hide ALL dashboard chips behind the degraded banner, or cause Discord "source silent" spam? Also: first-run backfill volume + alert safety, [DOJ]/[CFTC] classify → regulatory, story clustering across 40+ publishers.
+  2. Fix anything Fable flags (tests first, GLM one file at a time).
+  3. Deploy (restart collector), run `node build/tests/coverage_probe.js`, update this file, push.
+- Note: the step-3 code is COMMITTED but NOT DEPLOYED — the live collector still runs the 6 original RSS feeds.
 
 ## Remaining after step 3
 5. `/coin/[ticker]` page + search + source tabs (+ "hide tier-4 importance<30" toggle / Important filter — gnews volume dominates the feed otherwise).
@@ -48,3 +51,8 @@ Then: Step 8 Discord alerts (**needs DISCORD_NEWS_WEBHOOK from user**), Astra ba
 - `newsCount48h` includes importance-10 price-bot items — decide at step 5 whether the 📰 chip counts ≥20 only.
 - newsFile.js 5000-row query every 5 s — revisit interval at higher volume.
 - Uncovered setup coins at last probe: ARK BR BROCCOLI714 MUBARAK ONE SAGA TRUMP WLD XAI XMR XPL 龙虾 (several simply had no news).
+
+## Machine state at handoff
+- Local collector (supervisor → ingest + signals) still running on the dev PC with Phase 3 steps 1, 2, 4A + date fix (started 17:53 UTC).
+- Local Sahasra UI (port 4180) stopped. WSL shut down to free RAM (not needed; NEWS_REDIS=off).
+- Git author for this repo: `Claude <noreply@anthropic.com>`, commits end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`. Push a RESUME.md handoff after every step.
