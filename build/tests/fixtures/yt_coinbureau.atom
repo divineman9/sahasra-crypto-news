@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+  <link rel="hub" href="https://pubsubhubbub.appspot.com"/>
+  <link rel="self" href="https://www.youtube.com/feeds/videos.xml?channel_id=UCqK_GSMbpiV8spgD3ZGloSw"/>
+  <id>yt:channel:UCqK_GSMbpiV8spgD3ZGloSw</id>
+  <yt:channelId>UCqK_GSMbpiV8spgD3ZGloSw</yt:channelId>
+  <title>Coin Bureau</title>
+  <author>
+    <name>Coin Bureau</name>
+    <uri>https://www.youtube.com/channel/UCqK_GSMbpiV8spgD3ZGloSw</uri>
+  </author>
+  <entry>
+    <id>yt:video:abcDEF12345</id>
+    <yt:videoId>abcDEF12345</yt:videoId>
+    <yt:channelId>UCqK_GSMbpiV8spgD3ZGloSw</yt:channelId>
+    <title>Bitcoin Just Did WHAT?! (Full Breakdown)</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=abcDEF12345"/>
+    <author>
+      <name>Coin Bureau</name>
+      <uri>https://www.youtube.com/channel/UCqK_GSMbpiV8spgD3ZGloSw</uri>
+    </author>
+    <published>{{RECENT_1}}</published>
+    <updated>{{RECENT_1}}</updated>
+    <media:group>
+      <media:title>Bitcoin Just Did WHAT?! (Full Breakdown)</media:title>
+      <media:content url="https://www.youtube.com/v/abcDEF12345?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+      <media:thumbnail url="https://i.ytimg.com/vi/abcDEF12345/hqdefault.jpg" width="480" height="360"/>
+      <media:description>A deep dive into the latest Bitcoin move.</media:description>
+    </media:group>
+  </entry>
+  <!-- F1 (step 7 fix round): a real channel Atom feed almost certainly links every entry, Short
+       or not, through the normal /watch?v=<id> form — there is no confirmed real-world case of a
+       videos.xml <link> containing "/shorts/". This entry is a defensive/edge-case fixture only,
+       exercising youtube.js's isShorts() no-op-in-practice safety check, not a documented feed
+       behaviour. -->
+  <entry>
+    <id>yt:video:short0000001</id>
+    <yt:videoId>short0000001</yt:videoId>
+    <yt:channelId>UCqK_GSMbpiV8spgD3ZGloSw</yt:channelId>
+    <title>60-Second Bitcoin Update</title>
+    <link rel="alternate" href="https://www.youtube.com/shorts/short0000001"/>
+    <author>
+      <name>Coin Bureau</name>
+      <uri>https://www.youtube.com/channel/UCqK_GSMbpiV8spgD3ZGloSw</uri>
+    </author>
+    <published>{{RECENT_2}}</published>
+    <updated>{{RECENT_2}}</updated>
+    <media:group>
+      <media:title>60-Second Bitcoin Update</media:title>
+      <media:thumbnail url="https://i.ytimg.com/vi/short0000001/hqdefault.jpg" width="480" height="360"/>
+      <media:description>Shorts recap.</media:description>
+    </media:group>
+  </entry>
+  <entry>
+    <id>yt:video:oldvideo00001</id>
+    <yt:videoId>oldvideo00001</yt:videoId>
+    <yt:channelId>UCqK_GSMbpiV8spgD3ZGloSw</yt:channelId>
+    <title>An Old Video From Last Month</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=oldvideo00001"/>
+    <author>
+      <name>Coin Bureau</name>
+      <uri>https://www.youtube.com/channel/UCqK_GSMbpiV8spgD3ZGloSw</uri>
+    </author>
+    <published>{{OLD}}</published>
+    <updated>{{OLD}}</updated>
+    <media:group>
+      <media:title>An Old Video From Last Month</media:title>
+      <media:thumbnail url="https://i.ytimg.com/vi/oldvideo00001/hqdefault.jpg" width="480" height="360"/>
+      <media:description>Outside the 7-day window.</media:description>
+    </media:group>
+  </entry>
+</feed>

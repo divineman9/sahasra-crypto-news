@@ -1,0 +1,6 @@
+{
+  "access_token": "TESTTOKEN_ABC123",
+  "token_type": "bearer",
+  "expires_in": 3600,
+  "scope": "*"
+}

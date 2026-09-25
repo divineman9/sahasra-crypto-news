@@ -9,6 +9,7 @@ import type { PostDTO } from "@/lib/types";
 import type { SourceTab } from "@/lib/sourceTab";
 import { ageMs, fmtAge, groupStories, isFresh, type StoryView } from "@/lib/filters";
 import { CATEGORY_STYLE, fmtDateTime, fmtPubTime, kindIcon } from "@/lib/ui";
+import { mediaThumb } from "@/lib/mediaThumb";
 
 type Range = "48h" | "7d";
 type Tab = "all" | SourceTab;
@@ -292,6 +293,7 @@ function CoinStoryRow({ story, now }: { story: StoryView; now: number }) {
   const ki = kindIcon(post.kind);
   const cat = CATEGORY_STYLE[post.category];
   const age = ageMs(post, now);
+  const thumb = post.kind === "media" ? mediaThumb(post.url) : null;
 
   return (
     <li className="flex items-center gap-2 py-1.5">
@@ -299,6 +301,18 @@ function CoinStoryRow({ story, now }: { story: StoryView; now: number }) {
         {fmtPubTime(post.publishedAt)}
       </span>
       <ki.Icon className={`h-3.5 w-3.5 shrink-0 ${ki.cls}`} aria-label={ki.label} />
+      {thumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumb}
+          alt=""
+          width={48}
+          height={27}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="h-[27px] w-12 shrink-0 rounded object-cover"
+        />
+      ) : null}
       <Link href={`/post/${post.id}`} className="min-w-0 flex-1 truncate text-slate-200 hover:text-white" title={post.title}>
         {post.title}
       </Link>

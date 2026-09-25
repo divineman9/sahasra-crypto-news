@@ -84,4 +84,37 @@ const TG_CHANNELS = [
   { channel: 'whale_alert_io', tier: 4, intervalMs: 120000, alertable: false, maxImportance: 10, verified: false },
 ];
 
-module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS };
+// Phase 3 step 7: YouTube channel Atom feeds (app/ingest/adapters/youtube.js). All 14 channel
+// IDs were live-verified by Fable on 2026-09-25 (see build/review_fable_cryptopanic_gap.md), so
+// each defaults to `verified: true` (quietHealth: false in youtube.js — normal health alerts
+// apply, unlike the unverified TG_CHANNELS/officialSources.json entries above).
+const YT_CHANNELS = [
+  { slug: 'coinbureau', name: 'Coin Bureau', channelId: 'UCqK_GSMbpiV8spgD3ZGloSw', verified: true },
+  { slug: 'bankless', name: 'Bankless', channelId: 'UCAl9Ld79qaZxp9JzEOwd3aA', verified: true },
+  { slug: 'thedefiant', name: 'The Defiant', channelId: 'UCL0J4MLEdLP0-UyLu0hCktg', verified: true },
+  { slug: 'altcoindaily', name: 'Altcoin Daily', channelId: 'UCbLhGKVY-bJPcawebgtNfbw', verified: true },
+  { slug: 'investanswers', name: 'InvestAnswers', channelId: 'UClgJyzwGs-GyaNxUHcLZrkg', verified: true },
+  { slug: 'pomp', name: 'Pomp', channelId: 'UCevXpeL8cNyAnww-NqJ4m2w', verified: true },
+  { slug: 'coindesk', name: 'CoinDesk', channelId: 'UC7TghOL755nBk7HelHoi9LQ', verified: true },
+  { slug: 'bitcoinmagazine', name: 'Bitcoin Magazine', channelId: 'UCtOV5M-T3GcsJAq8QKaf0lg', verified: true },
+  { slug: 'realvision', name: 'Real Vision', channelId: 'UCGXWKlq1Oxr3ddEtmKhAkPg', verified: true },
+  { slug: 'cryptobanter', name: 'Crypto Banter', channelId: 'UCN9Nj4tjXbVTLYWN0EKly_Q', verified: true },
+  { slug: 'datadash', name: 'DataDash', channelId: 'UCCatR7nWbYrkVXdxXb4cGXw', verified: true },
+  { slug: 'theblock', name: 'The Block', channelId: 'UC5sL8J5z4PLXjpUce0pnhPg', verified: true },
+  { slug: 'paulbarron', name: 'Paul Barron', channelId: 'UC4VPa7EOvObpyCRI4YKRQRw', verified: true },
+  { slug: 'unchained', name: 'Unchained', channelId: 'UCWiiMnsnw5Isc2PP1to9nNw', verified: true },
+];
+
+// Phase 3 step 7: Reddit subreddits (app/ingest/adapters/reddit.js), polled via the free OAuth
+// "script" app flow. minScore is the hot-post score gate (a post also qualifies regardless of
+// score when its flair looks like news/breaking — see reddit.js).
+const REDDIT_SUBS = [
+  { sub: 'CryptoCurrency', minScore: 150 },
+  { sub: 'CryptoMarkets', minScore: 50 },
+  { sub: 'Bitcoin', minScore: 100 },
+  { sub: 'ethereum', minScore: 50 },
+  { sub: 'solana', minScore: 50 },
+  { sub: 'defi', minScore: 30 },
+];
+
+module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS, YT_CHANNELS, REDDIT_SUBS };

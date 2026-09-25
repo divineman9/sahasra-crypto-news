@@ -29,6 +29,8 @@ const rss = require('./ingest/adapters/rss');
 const gnews = require('./ingest/adapters/gnews');
 const telegram = require('./ingest/adapters/telegram');
 const official = require('./ingest/adapters/official');
+const youtube = require('./ingest/adapters/youtube');
+const reddit = require('./ingest/adapters/reddit');
 const { loadWatchBases } = require('./ingest/watchlist');
 
 const TIER_CACHE_FILE = path.join(__dirname, 'ingest', 'cache', 'gnews_tiers.json');
@@ -134,6 +136,11 @@ async function main() {
     gnews.make({ getTierA: () => loadWatchBases(), getTierB: () => tierBList, getTierC: () => tierCList }),
     ...(process.env.TG_WIRES_ENABLED !== '0' ? telegram.make() : []),
     ...(process.env.OFFICIAL_ENABLED !== '0' ? official.make() : []),
+    ...(process.env.YOUTUBE_ENABLED !== '0' ? youtube.make() : []),
+    // reddit.make() itself is a no-op (and logs one disabled-startup line) when
+    // REDDIT_CLIENT_ID/SECRET/USERNAME/PASSWORD aren't all set — REDDIT_ENABLED only gates
+    // whether we even try.
+    ...(process.env.REDDIT_ENABLED !== '0' ? reddit.make() : []),
   ];
 
   let futuresFirstRun = true;

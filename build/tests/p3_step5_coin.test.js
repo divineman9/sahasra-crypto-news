@@ -41,7 +41,7 @@ const TEST_TICKERS = ['P5COIN', 'P5A', 'P5AB', 'P5ABC', 'ZQNAME'];
 
 (async () => {
   console.log('— sourceTab classifier');
-  const { sourceTab, hideLowImportanceGnews } = require(APP + '/src/lib/sourceTab.js');
+  const { sourceTab, hideLowImportanceTier4, hideLowImportanceGnews } = require(APP + '/src/lib/sourceTab.js');
 
   eq('media kind -> media', sourceTab({ kind: 'media', sourceName: 'yt:x' }), 'media');
   eq('social kind -> social', sourceTab({ kind: 'social', sourceName: 'reddit:x' }), 'social');
@@ -56,12 +56,18 @@ const TEST_TICKERS = ['P5COIN', 'P5A', 'P5AB', 'P5ABC', 'ZQNAME'];
   eq('unknown kind -> news', sourceTab({ kind: 'something-new', sourceName: 'rss:x' }), 'news');
   eq('missing kind -> news', sourceTab({ sourceName: 'rss:x' }), 'news');
 
-  console.log('— hide-low-importance-gnews predicate');
-  check('gnews imp 25 hidden', hideLowImportanceGnews({ sourceName: 'gnews:example.com', importance: 25 }) === true);
-  check('gnews imp 30 shown', hideLowImportanceGnews({ sourceName: 'gnews:example.com', importance: 30 }) === false);
-  check('gnews imp 29 hidden (boundary)', hideLowImportanceGnews({ sourceName: 'gnews:example.com', importance: 29 }) === true);
-  check('non-gnews imp 10 shown', hideLowImportanceGnews({ sourceName: 'rss:coindesk', importance: 10 }) === false);
-  check('missing importance treated as 0 -> hidden for gnews', hideLowImportanceGnews({ sourceName: 'gnews:x.com' }) === true);
+  console.log('— hide-low-importance-tier4 predicate (F2: generalised from gnews-only to every tier-4 source)');
+  check('gnews imp 25 hidden', hideLowImportanceTier4({ sourceName: 'gnews:example.com', sourceTier: 4, importance: 25 }) === true);
+  check('gnews imp 30 shown', hideLowImportanceTier4({ sourceName: 'gnews:example.com', sourceTier: 4, importance: 30 }) === false);
+  check('gnews imp 29 hidden (boundary)', hideLowImportanceTier4({ sourceName: 'gnews:example.com', sourceTier: 4, importance: 29 }) === true);
+  check('media imp 10 hidden (yt: tier 4)', hideLowImportanceTier4({ sourceName: 'yt:coinbureau', kind: 'media', sourceTier: 4, importance: 10 }) === true);
+  check('social imp 10 hidden (reddit: tier 4)', hideLowImportanceTier4({ sourceName: 'reddit:CryptoCurrency', kind: 'social', sourceTier: 4, importance: 10 }) === true);
+  check('whale tier-4 imp 10 hidden', hideLowImportanceTier4({ sourceName: 'tg:whale_alert_io', sourceTier: 4, importance: 10 }) === true);
+  check('tier-3 news imp 10 shown (not tier 4, regardless of importance)', hideLowImportanceTier4({ sourceName: 'rss:coindesk', sourceTier: 3, importance: 10 }) === false);
+  check('tier-4 imp 30 shown (at the boundary, not below it)', hideLowImportanceTier4({ sourceName: 'gnews:example.com', sourceTier: 4, importance: 30 }) === false);
+  check('missing importance treated as 0 -> hidden when tier 4', hideLowImportanceTier4({ sourceName: 'gnews:x.com', sourceTier: 4 }) === true);
+  check('missing sourceTier -> never hidden', hideLowImportanceTier4({ sourceName: 'gnews:x.com', importance: 5 }) === false);
+  check('hideLowImportanceGnews is kept as an alias of hideLowImportanceTier4 (compat)', hideLowImportanceGnews === hideLowImportanceTier4);
 
   console.log('— app is built');
   const nextDir = path.join(APP, '.next');

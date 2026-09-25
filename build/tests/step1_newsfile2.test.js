@@ -5,8 +5,8 @@ process.env.NEWS_LIVE_JSON = out;
 const { check, eq, done } = require('./assert_lib');
 const { startNewsFile } = require('D:/claude projects/crypto-news-terminal/app/ingest/newsFile.js');
 const now = Date.now(), h = 3600e3;
-const P = (id, story, ticker, category, importance, sentiment, pubAgoH) => ({
-  id, storyId: story, title: `${category} ${ticker} ${id}`, url: `https://x/${id}`, category, importance, sentiment,
+const P = (id, story, ticker, category, importance, sentiment, pubAgoH, kind = 'news') => ({
+  id, storyId: story, title: `${category} ${ticker} ${id}`, url: `https://x/${id}`, category, importance, sentiment, kind,
   sourceName: 'test', publishedAt: new Date(now - pubAgoH * h), firstSeenAt: new Date(now - Math.max(0, pubAgoH) * h + 1000),
   userLabel: null, instruments: [{ ticker }] });
 const posts = [
@@ -16,6 +16,9 @@ const posts = [
   P('B2', 's3', 'BBB', 'other', 30, 'neutral', 4), // same story as B1
   P('B3', 's4', 'BBB', 'other', 20, 'neutral', 1),
   P('B4', 's5', 'BBB', 'other', 20, 'neutral', 49), // too old
+  // F3 (step 7 fix round): media/social must never feed newsCount48h/newsLatest.
+  P('M1', 's6', 'CCC', 'other', 10, 'neutral', 1, 'media'),
+  P('S1', 's7', 'CCC', 'other', 10, 'neutral', 1, 'social'),
 ];
 let capturedWhere = null;
 const prisma = { post: { findMany: async (q) => {
@@ -40,6 +43,7 @@ setTimeout(() => {
   eq('BBB newsLatest newest first, one per story', b && b.newsLatest.map((x) => x.id), ['B3', 'B2']);
   check('newsLatest items carry title/source/publishedAt/importance', b && b.newsLatest.every((x) => x.title && x.source && x.publishedAt && typeof x.importance === 'number'));
   check('BBB newsLatestPublishedAt is ISO of newest', b && b.newsLatestPublishedAt === posts[4].publishedAt.toISOString(), b && b.newsLatestPublishedAt);
+  eq('F3: media/social excluded from newsCount48h/newsLatest -> CCC (media+social only) has no flags entry at all', j.flags.CCC, undefined);
   try { fs.unlinkSync(out); } catch {}
   done('step1_newsfile2');
 }, 900);

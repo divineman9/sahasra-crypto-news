@@ -59,10 +59,15 @@ function buildHealth(scheduler, now) {
   const stale = [];
   for (const a of adapters) {
     if (!a) continue;
-    const windowMs = a.tier === 1 ? 15 * 60000 : 30 * 60000;
+    // Fix round (B1, step 7): same interval-aware window as health.js (a fixed 30-min window
+    // falsely marks any 30-min-or-slower adapter as stale on ~half of jittered cycles), AND
+    // quietHealth (unverified) adapters never raise the dashboard's degraded-coverage banner —
+    // an unverified source going quiet is a log-only concern (see health.js), not something the
+    // person watching news_live.json's health.ok should be paged for.
+    const windowMs = Math.max(a.tier === 1 ? 15 * 60000 : 30 * 60000, (a.intervalMs || 0) * 2);
     const lastOk = a.lastOkAt ? new Date(a.lastOkAt).getTime() : 0;
     const ok = lastOk > now - windowMs && (a.consecutiveErrors || 0) < 3 && (a.consecutiveSaveErrors || 0) < 3;
-    if (!ok) stale.push(a.name);
+    if (!ok && !a.quietHealth) stale.push(a.name);
   }
   return {
     known: true,
@@ -153,6 +158,11 @@ async function tick(prisma, scheduler) {
 
   const newsByTicker = {};
   for (const p of posts) {
+    // F3 (step 7 fix round): the dashboard's neutral "📰 N" chip (newsCount48h/newsLatest) is
+    // meant for ordinary news coverage — a YouTube video or Reddit thread is not a news story in
+    // that sense (and both are already capped at importance<=10, so they can never become a
+    // risk/catalyst/other chip via chipPosts above). Excluded here only; chipPosts is unaffected.
+    if (p.kind === 'media' || p.kind === 'social') continue;
     const item = {
       id: p.id,
       title: p.title,

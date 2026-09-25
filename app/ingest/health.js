@@ -30,7 +30,12 @@ function startHealth({ scheduler, alerts, intervalMs = 60000 }) {
         return;
       }
       for (const a of entries) {
-        const limit = a.tier === 1 ? 15 * 60000 : 30 * 60000;
+        // Fix round (B1, step 7): the health window must never be tighter than 2x an adapter's own
+        // poll interval — a fixed 30-min window falsely flags any 30-min-or-slower adapter (e.g.
+        // youtube.js, official.js) as silent on the ~half of scheduler jitter cycles (0.8-1.2x
+        // intervalMs) that land past 30 min, alerting every minute even though the adapter is
+        // healthy. scheduler.health() already exposes intervalMs per adapter (see scheduler.js).
+        const limit = Math.max(a.tier === 1 ? 15 * 60000 : 30 * 60000, (a.intervalMs || 0) * 2);
         const ref = toMs(a.lastOkAt) ?? startedAt;
         const age = Date.now() - ref;
         if (age > limit) {

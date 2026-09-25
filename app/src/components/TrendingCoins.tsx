@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { useFeedStore } from "@/store/useFeedStore";
-import { hideLowImportanceGnews } from "@/lib/sourceTab";
+import { hideLowImportanceTier4 } from "@/lib/sourceTab";
 
 interface Trend {
   ticker: string;
@@ -24,8 +24,8 @@ export function TrendingCoins() {
     const map = new Map<string, Trend>();
     const seenStories = new Map<string, Set<string>>();
     // Same predicate the main feed applies (visibleStories) — otherwise Trending's counts include
-    // low-importance gnews posts the feed itself is hiding, and the two disagree on a coin's volume.
-    const source = hideLowGnews ? posts.filter((p) => !hideLowImportanceGnews(p)) : posts;
+    // low-importance tier-4 posts the feed itself is hiding, and the two disagree on a coin's volume.
+    const source = hideLowGnews ? posts.filter((p) => !hideLowImportanceTier4(p)) : posts;
     for (const p of source) {
       if (new Date(p.publishedAt).getTime() < cutoff) continue;
       const storyKey = p.storyId ?? p.id;

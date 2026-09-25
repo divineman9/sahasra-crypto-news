@@ -1,0 +1,170 @@
+{
+  "kind": "Listing",
+  "data": {
+    "children": [
+      {
+        "kind": "t3",
+        "data": {
+          "id": "s1",
+          "stickied": true,
+          "over_18": false,
+          "score": 9999,
+          "link_flair_text": null,
+          "title": "Daily Discussion Megathread",
+          "permalink": "/r/CryptoCurrency/comments/s1/daily_discussion/",
+          "created_utc": {{RECENT_EPOCH}},
+          "author": "AutoModerator",
+          "is_self": true,
+          "selftext": "Welcome to the daily discussion thread."
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "n1",
+          "stickied": false,
+          "over_18": true,
+          "score": 9999,
+          "link_flair_text": null,
+          "title": "NSFW meme post",
+          "permalink": "/r/CryptoCurrency/comments/n1/nsfw_meme/",
+          "created_utc": {{RECENT_EPOCH}},
+          "author": "meme_lord42",
+          "is_self": false,
+          "selftext": ""
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "l1",
+          "stickied": false,
+          "over_18": false,
+          "score": 10,
+          "link_flair_text": null,
+          "title": "Just bought my first bitcoin, feeling great",
+          "permalink": "/r/CryptoCurrency/comments/l1/low_score/",
+          "created_utc": {{RECENT_EPOCH}},
+          "author": "new_hodler_99",
+          "is_self": true,
+          "selftext": "Just wanted to share my excitement!"
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "f1",
+          "stickied": false,
+          "over_18": false,
+          "score": 20,
+          "link_flair_text": "NEWS",
+          "title": "SEC delays decision on spot XRP ETF",
+          "permalink": "/r/CryptoCurrency/comments/f1/sec_delays/",
+          "created_utc": {{RECENT_EPOCH}},
+          "author": "cryptonewsbot",
+          "is_self": false,
+          "selftext": ""
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "o1",
+          "stickied": false,
+          "over_18": false,
+          "score": 5000,
+          "link_flair_text": null,
+          "title": "Old high-score post outside the 48h window",
+          "permalink": "/r/CryptoCurrency/comments/o1/old_post/",
+          "created_utc": {{OLD_EPOCH}},
+          "author": "veteran_trader",
+          "is_self": false,
+          "selftext": ""
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "q1",
+          "stickied": false,
+          "over_18": false,
+          "score": 500,
+          "link_flair_text": null,
+          "title": "Bitcoin ETF sees record inflows as institutions pile in",
+          "permalink": "/r/CryptoCurrency/comments/q1/etf_inflows/",
+          "created_utc": {{RECENT_EPOCH}},
+          "author": "market_watcher",
+          "is_self": false,
+          "selftext": ""
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "rm1",
+          "stickied": false,
+          "over_18": false,
+          "score": 800,
+          "link_flair_text": null,
+          "title": "This post was removed by a moderator",
+          "permalink": "/r/CryptoCurrency/comments/rm1/removed_post/",
+          "created_utc": {{RECENT_EPOCH}},
+          "removed_by_category": "moderator",
+          "author": "some_user1",
+          "is_self": true,
+          "selftext": ""
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "da1",
+          "stickied": false,
+          "over_18": false,
+          "score": 900,
+          "link_flair_text": null,
+          "title": "Author deleted this post after posting",
+          "permalink": "/r/CryptoCurrency/comments/da1/deleted_author/",
+          "created_utc": {{RECENT_EPOCH}},
+          "author": "[deleted]",
+          "is_self": true,
+          "selftext": "original text before the author left"
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "rs1",
+          "stickied": false,
+          "over_18": false,
+          "score": 700,
+          "link_flair_text": null,
+          "title": "Content removed by Reddit automod",
+          "permalink": "/r/CryptoCurrency/comments/rs1/removed_selftext/",
+          "created_utc": {{RECENT_EPOCH}},
+          "author": "some_user2",
+          "is_self": true,
+          "selftext": "[removed]"
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "ds1",
+          "stickied": false,
+          "over_18": false,
+          "score": 600,
+          "link_flair_text": null,
+          "title": "Poster deleted their own text",
+          "permalink": "/r/CryptoCurrency/comments/ds1/deleted_selftext/",
+          "created_utc": {{RECENT_EPOCH}},
+          "author": "some_user3",
+          "is_self": true,
+          "selftext": "[deleted]"
+        }
+      }
+    ],
+    "after": null,
+    "before": null
+  }
+}

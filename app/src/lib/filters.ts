@@ -1,5 +1,5 @@
 import type { FilterKey, PostDTO } from "@/lib/types";
-import { hideLowImportanceGnews } from "@/lib/sourceTab";
+import { hideLowImportanceTier4 } from "@/lib/sourceTab";
 
 export type { FilterKey };
 
@@ -91,9 +91,12 @@ export function visibleStories(
   f: FilterKey,
   portfolio: string[],
   now: number,
+  // Named for the persisted store key (`hideLowGnews`, kept as-is so existing users' localStorage
+  // isn't migrated) — the predicate it drives was generalised in F2 to every tier-4 source, not
+  // just Google News.
   hideLowGnews = false
 ): StoryView[] {
-  const base = hideLowGnews ? posts.filter((p) => !hideLowImportanceGnews(p)) : posts;
+  const base = hideLowGnews ? posts.filter((p) => !hideLowImportanceTier4(p)) : posts;
   let views = groupStories(base).filter((v) => matchesStory(v, f, now));
   if (portfolio.length > 0) {
     const set = new Set(portfolio);

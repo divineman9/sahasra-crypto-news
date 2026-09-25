@@ -7,6 +7,7 @@ import type { PostDTO } from "@/lib/types";
 import { useFeedStore } from "@/store/useFeedStore";
 import { useLabel } from "@/hooks/useLabel";
 import { isSimulated } from "@/lib/simulated";
+import { mediaThumb } from "@/lib/mediaThumb";
 import {
   ageMs,
   fmtAge,
@@ -59,6 +60,8 @@ export function PostDetail({ post }: { post: PostDTO }) {
       ? minutesBetween(post.symbolSeenAt, post.announcementSeenAt)
       : null;
 
+  const thumb = post.kind === "media" ? mediaThumb(post.url) : null;
+
   return (
     <div className="max-w-4xl p-4 text-xs font-mono text-slate-300">
       <Link href="/" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-300">
@@ -78,6 +81,19 @@ export function PostDetail({ post }: { post: PostDTO }) {
       </div>
 
       <h1 className="mt-2 text-lg text-slate-100 font-sans font-semibold">{post.title}</h1>
+
+      {thumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumb}
+          alt=""
+          width={320}
+          height={180}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="mt-3 h-auto max-w-xs rounded border border-slate-800"
+        />
+      ) : null}
 
       <div className="mt-2 flex flex-wrap gap-2">
         {cat.label ? (

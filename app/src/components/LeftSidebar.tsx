@@ -81,7 +81,7 @@ export function LeftSidebar() {
           onChange={(e) => setHideLowGnews(e.target.checked)}
           className="h-3 w-3 accent-emerald-500"
         />
-        Hide low-importance Google News
+        Hide low-importance (Google News, video, Reddit, whale)
       </label>
 
       <div className="flex flex-col gap-2">
