@@ -39,7 +39,7 @@ function fillDates(text, subs) {
   const tgNames = TG_CHANNELS.map((c) => 'tg:' + c.channel.toLowerCase());
   eq('adapter names unique', new Set(tgNames).size, tgNames.length);
   const byChan = Object.fromEntries(TG_CHANNELS.map((c) => [c.channel, c]));
-  check('TreeNewsFeed/WatcherGuru/wublockchainenglish/Walter_Bloomberg: tier 2, 60s', ['TreeNewsFeed', 'WatcherGuru', 'wublockchainenglish', 'Walter_Bloomberg'].every((c) => byChan[c] && byChan[c].tier === 2 && byChan[c].intervalMs === 60000));
+  check('F2: TreeNewsFeed/WatcherGuru/wublockchainenglish/Walter_Bloomberg: tier 2, 120s (raised from 60s so t.me total drops from 7.5 to 5.5 req/min)', ['TreeNewsFeed', 'WatcherGuru', 'wublockchainenglish', 'Walter_Bloomberg'].every((c) => byChan[c] && byChan[c].tier === 2 && byChan[c].intervalMs === 120000));
   check('PeckShieldAlert/CertiKAlert: tier 3, 120s', ['PeckShieldAlert', 'CertiKAlert'].every((c) => byChan[c] && byChan[c].tier === 3 && byChan[c].intervalMs === 120000));
   check('whale_alert_io: tier 4, 120s, alertable false, maxImportance 10', byChan.whale_alert_io && byChan.whale_alert_io.tier === 4 && byChan.whale_alert_io.intervalMs === 120000 && byChan.whale_alert_io.alertable === false && byChan.whale_alert_io.maxImportance === 10);
   check('Walter_Bloomberg has a filter combining CRYPTO_FILTER + macro terms', byChan.Walter_Bloomberg.filter && byChan.Walter_Bloomberg.filter.indexOf(CRYPTO_FILTER) !== -1 && /Fed|FOMC|CPI|Powell|Treasury|tariff/.test(byChan.Walter_Bloomberg.filter));
@@ -210,6 +210,13 @@ function fillDates(text, subs) {
   console.log('— official adapter: pure helpers');
   const official = require(APP + '/ingest/adapters/official.js');
   eq('tagOf extracts the version from a /releases/tag/ url', official.tagOf('https://github.com/org/repo/releases/tag/v1.3.0-rc1'), 'v1.3.0-rc1');
+
+  console.log('— Fable follow-up (1): tagOf() no longer truncates a slash-shaped tag at the first slash');
+  eq('literal slash in the Location header (op-batcher/v1.17.0) -> full tag, not truncated to "op-batcher"', official.tagOf('https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher/v1.17.0'), 'op-batcher/v1.17.0');
+  eq('%2F-encoded slash in an atom <link> decodes to the SAME tag as the literal-slash Location header', official.tagOf('https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher%2Fv1.17.0'), 'op-batcher/v1.17.0');
+  eq('...so the two forms are now directly comparable (===), which is what the primary /latest-tag match relies on', official.tagOf('https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher/v1.17.0') === official.tagOf('https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher%2Fv1.17.0'), true);
+  eq('a query string / fragment after the tag is still excluded', official.tagOf('https://github.com/org/repo/releases/tag/v1.2.0?foo=bar'), 'v1.2.0');
+  eq('existing plain (non-slash) tag extraction still works', official.tagOf('https://github.com/org/repo/releases/tag/nightly-build'), 'nightly-build');
   check('isUnstableRelease: v1.2.0 is stable', !official.isUnstableRelease('v1.2.0', 'v1.2.0'));
   check('isUnstableRelease: -rc1 tag is unstable', official.isUnstableRelease('v1.3.0-rc1', 'v1.3.0-rc1'));
   check('isUnstableRelease: nightly build is unstable', official.isUnstableRelease('nightly-build', 'nightly-build'));
@@ -236,6 +243,10 @@ function fillDates(text, subs) {
     RECENT_2: iso(3 * 3600000),
     RECENT_3: iso(4 * 3600000),
     OLD: iso(10 * 86400000),
+    // B1 noise entries (used by the dedicated B1 block below): pushed out of this test's 7-day
+    // window so they never affect the "stable-only filter" assertion here.
+    NOISE_CI: iso(20 * 86400000), NOISE_MOCHA: iso(20 * 86400000), NOISE_B3: iso(20 * 86400000),
+    NOISE_CRATES: iso(20 * 86400000), NOISE_STABLE: iso(20 * 86400000),
   });
   const forumRss = fillDates(fs.readFileSync(path.join(FX, 'gov_forum.rss'), 'utf8'), {
     RECENT_1: new Date(now - 1 * 3600000).toUTCString(),
@@ -272,6 +283,97 @@ function fillDates(text, subs) {
   ]);
   check('forum items: kind official, tier 3, alertable false, hintTickers [UNI]', forumItems.every((i) => i.kind === 'official' && i.sourceTier === 3 && i.alertable === false && JSON.stringify(i.hintTickers) === JSON.stringify(['UNI'])), forumItems);
   http.request = realReq;
+
+  console.log('— B1 (blocker fix round): GitHub "stable releases only" no longer leaks CI/testnet/beta/component tags');
+  eq('GITHUB_MAX_ITEMS lowered from 20 to 5', official2.GITHUB_MAX_ITEMS, 5);
+  const strictKeep = ['v1.17.6', 'aptos-node-v1.49.1-hotfix', 'op-node/v1.19.8', 'v2026.04-1', 'v1.2.0', 'v1.82.0'];
+  eq('STRICT_TAG_RE (fallback-path shape): legit stable/hotfix/sub-component tags are kept', strictKeep.filter((t) => !official2.isStrictStableTag(t)), []);
+  const strictDrop = ['sui_v1.82.0_1790353319_ci', 'sui_v1.82.0_1790353319_release', 'v0.34.2-mocha', 'v0.34.2-corto', '3.4.0-b1', '3.4.0-b2', '3.4.0-b3', '11.0.1-docker', 'master-with-ledger-fix', 'crates-0.37.1', 'nightly-build'];
+  eq('STRICT_TAG_RE: CI/testnet/beta/docker/crates/misc tags are dropped', strictDrop.filter((t) => official2.isStrictStableTag(t)), []);
+  check('polkadot-stable2606-2 (no "." at all) is dropped by the strict regex — acceptable only in the fallback path (no primary /latest signal available)', !official2.isStrictStableTag('polkadot-stable2606-2'));
+  // Known fallback-path limitation (acceptable — the primary /releases/latest path is what
+  // actually disambiguates aptos-core's per-component tags in practice): aptos-cli-v1.2.3 has the
+  // exact same "word-prefix + version" shape as the legitimately-kept aptos-node-v1.49.1-hotfix,
+  // so the strict regex alone cannot tell them apart and keeps both.
+  check('aptos-cli-v1.2.3 has the same shape as a legit hotfix tag, so the fallback regex keeps it too (disambiguated by the primary /latest path instead, not the fallback)', official2.isStrictStableTag('aptos-cli-v1.2.3'));
+  eq('githubLatestUrl() shape', official2.githubLatestUrl('https://github.com/MystenLabs/sui/releases.atom'), 'https://github.com/MystenLabs/sui/releases/latest');
+
+  const ghNoiseAtom = fillDates(fs.readFileSync(path.join(FX, 'gh_releases.atom'), 'utf8'), {
+    // RECENT_1/2/3/OLD given valid but >7d-old dates -> the original 4 entries fall outside the
+    // 7-day window, isolating this block from the "stable-only filter" test's fixture entries.
+    RECENT_1: iso(20 * 86400000), RECENT_2: iso(20 * 86400000), RECENT_3: iso(20 * 86400000), OLD: iso(20 * 86400000),
+    NOISE_CI: iso(1 * 3600000), NOISE_MOCHA: iso(2 * 3600000), NOISE_B3: iso(3 * 3600000),
+    NOISE_CRATES: iso(4 * 3600000), NOISE_STABLE: iso(5 * 3600000),
+  });
+  const ghNoiseUrl = 'https://github.com/bitcoin/bitcoin/releases.atom';
+  const ghLatestUrl = 'https://github.com/bitcoin/bitcoin/releases/latest';
+
+  console.log('  · mocked /releases/latest 302 -> the redirected-to stable tag is the ONLY item returned');
+  http.request = async (url, opts) => {
+    if (url === ghNoiseUrl) return { status: 200, text: ghNoiseAtom, notModified: false, headers: {}, json: () => ({}) };
+    if (url === ghLatestUrl) return { status: 302, text: '', headers: { get: (h) => (h.toLowerCase() === 'location' ? 'https://github.com/bitcoin/bitcoin/releases/tag/v1.82.0' : null) }, json: () => ({}) };
+    return { status: 200, text: '', headers: {}, json: () => ({}) };
+  };
+  delete require.cache[require.resolve(APP + '/ingest/adapters/official.js')];
+  const officialLatest = require(APP + '/ingest/adapters/official.js');
+  const adLatest = officialLatest.make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0];
+  const latestItems = await adLatest.run();
+  eq('exactly one item, the stable v1.82.0 GitHub redirected to (not the CI/mocha/b3/crates noise around it)', latestItems.map((i) => i.title), ['Bitcoin Core v1.82.0']);
+
+  console.log('  · mocked /releases/latest 5xx -> falls back to the strict-tag-shape filter over the atom feed (no _ci/-mocha/-b3/crates)');
+  http.request = async (url) => {
+    if (url === ghNoiseUrl) return { status: 200, text: ghNoiseAtom, notModified: false, headers: {}, json: () => ({}) };
+    if (url === ghLatestUrl) throw new http.HttpError('HTTP 503', 503);
+    return { status: 200, text: '', headers: {}, json: () => ({}) };
+  };
+  delete require.cache[require.resolve(APP + '/ingest/adapters/official.js')];
+  const official5xx = require(APP + '/ingest/adapters/official.js');
+  const ad5xx = official5xx.make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0];
+  const fallbackItems = await ad5xx.run();
+  eq('fallback keeps only the strictly-stable tag (v1.82.0), drops all CI/mocha/b3/crates noise', fallbackItems.map((i) => i.title), ['Bitcoin Core v1.82.0']);
+
+  console.log('  · /releases/latest points at a tag not present in the atom feed -> [] (never guess)');
+  http.request = async (url) => {
+    if (url === ghNoiseUrl) return { status: 200, text: ghNoiseAtom, notModified: false, headers: {}, json: () => ({}) };
+    if (url === ghLatestUrl) return { status: 302, text: '', headers: { get: (h) => (h.toLowerCase() === 'location' ? 'https://github.com/bitcoin/bitcoin/releases/tag/v9.9.9-not-in-feed' : null) }, json: () => ({}) };
+    return { status: 200, text: '', headers: {}, json: () => ({}) };
+  };
+  delete require.cache[require.resolve(APP + '/ingest/adapters/official.js')];
+  const officialMismatch = require(APP + '/ingest/adapters/official.js');
+  const adMismatch = officialMismatch.make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0];
+  eq('mismatched /latest tag -> no items', await adMismatch.run(), []);
+  http.request = realReq;
+
+  console.log('— Fable follow-up (1): end-to-end — a slash-shaped tag (optimism-style per-component release) matches through the full adapter, not just the pure tagOf() helper');
+  {
+    const opAtomUrl = 'https://github.com/ethereum-optimism/optimism/releases.atom';
+    const opLatestUrl = 'https://github.com/ethereum-optimism/optimism/releases/latest';
+    const opAtom = `<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <updated>${iso(1 * 3600000)}</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher%2Fv1.17.0"/>
+    <title>op-batcher/v1.17.0</title>
+  </entry>
+  <entry>
+    <updated>${iso(2 * 3600000)}</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/ethereum-optimism/optimism/releases/tag/op-node%2Fv1.9.3"/>
+    <title>op-node/v1.9.3</title>
+  </entry>
+</feed>`;
+    http.request = async (url) => {
+      if (url === opAtomUrl) return { status: 200, text: opAtom, notModified: false, headers: {}, json: () => ({}) };
+      if (url === opLatestUrl) return { status: 302, text: '', headers: { get: (h) => (h.toLowerCase() === 'location' ? 'https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher/v1.17.0' : null) }, json: () => ({}) };
+      return { status: 200, text: '', headers: {}, json: () => ({}) };
+    };
+    delete require.cache[require.resolve(APP + '/ingest/adapters/official.js')];
+    const officialOp = require(APP + '/ingest/adapters/official.js');
+    const adOp = officialOp.make({ sources: [{ type: 'github', url: opAtomUrl, base: 'OP', name: 'Optimism', verified: false }] })[0];
+    const opItems = await adOp.run();
+    eq('the %2F-encoded atom entry matches the literal-slash Location -> exactly the op-batcher release (not op-node, not [])', opItems.map((i) => i.title), ['Optimism op-batcher/v1.17.0']);
+    eq('url preserved as the atom entry\'s own (encoded) link', opItems[0] && opItems[0].url, 'https://github.com/ethereum-optimism/optimism/releases/tag/op-batcher%2Fv1.17.0');
+    http.request = realReq;
+  }
 
   console.log('— config sanity: adapter names unique across telegram + official, urls https');
   const officialNames = sources.map((s) => official2.adapterName(s));
@@ -322,6 +424,49 @@ function fillDates(text, subs) {
   eq('official github item stored with kind official', gp && gp.kind, 'official');
   eq('... and baseline importance 40', gp && gp.importance, 40);
   await prisma.post.deleteMany({ where: { url: { startsWith: URL_PREFIX } } });
+
+  console.log('— F6 (fix round): store.js P2002-on-url caches the existing row, so a re-listed item outside the init() window stops re-attempting create() every poll');
+  {
+    const F6_PREFIX = 'https://test.local/p3s6f6/';
+    await prisma.post.deleteMany({ where: { url: { startsWith: F6_PREFIX } } });
+    const redisF6 = new MemoryRedis();
+    const alertsF6 = new Alerts({ prisma, redis: redisF6 });
+    const storeF6 = new Store({ prisma, redis: redisF6, storyIndex: new StoryIndex(), alerts: alertsF6 });
+    await storeF6.init(); // urls map built BEFORE the row below exists — it can never be in it
+
+    const f6Url = F6_PREFIX + 'dup1';
+    // A row that exists in the DB but is not in storeF6's in-memory `urls` map — created directly
+    // via prisma (bypassing Store entirely), simulating one that fell outside init()'s 5000-row
+    // window on a real, busier database.
+    const created = await prisma.post.create({ data: {
+      title: 'Duplicate listing notice', url: f6Url, sourceDomain: 'test.local',
+      publishedAt: new Date(), kind: 'exchange', sentiment: 'neutral', category: 'listing',
+      importance: 30, sourceName: 'test', sourceTier: 2, firstSeenAt: new Date(),
+    } });
+    check('sanity: storeF6.urls does not know about it yet', !storeF6.urls.has(f6Url));
+
+    let createCalls = 0;
+    const origCreate = prisma.post.create.bind(prisma.post);
+    prisma.post.create = (...args) => { createCalls++; return origCreate(...args); };
+    try {
+      const item = { sourceName: 'test', sourceTier: 2, kind: 'exchange', exchange: 'Binance', title: 'Duplicate listing notice', url: f6Url, publishedAt: new Date(), hintCategory: null, hintTickers: ['XYZ'], sourceDomain: 'test.local' };
+      const r1 = await storeF6.save(item, { warm: true });
+      eq('first save (url already in DB, not yet in the in-memory map) -> P2002 on url -> returns null', r1, null);
+      eq('exactly one create() attempt for the first save (the one that failed)', createCalls, 1);
+      check('F6: the existing row is now cached in-memory (id + title)', storeF6.urls.has(f6Url) && storeF6.urls.get(f6Url).id === created.id, storeF6.urls.get(f6Url));
+
+      const r2 = await storeF6.save(item, { warm: true });
+      eq('second save -> short-circuited by the now-cached `known` entry -> null', r2, null);
+      eq('createCalls still 1 after the second save (no repeated create() attempt)', createCalls, 1);
+
+      const r3 = await storeF6.save(item, { warm: true });
+      eq('third save -> still short-circuited, no second create() attempt ever happens', r3, null);
+      eq('createCalls still 1 after the third save', createCalls, 1);
+    } finally {
+      prisma.post.create = origCreate;
+    }
+    await prisma.post.deleteMany({ where: { url: { startsWith: F6_PREFIX } } });
+  }
 
   console.log('— CoinGecko links mapping (pure function, fixture only — the CLI cannot run here, no internet)');
   const { mapCoinGeckoLinks } = require(path.join(__dirname, '..', 'tools', 'coingecko_links.js'));
@@ -466,6 +611,79 @@ function fillDates(text, subs) {
   const normalPollLines = f7Errors.filter((l) => l.includes('rss:f7-normal') && l.includes('no successful poll'));
   eq('quietHealth adapter: "no successful poll" logged once (throttled to 1/hour), not once per tick', quietPollLines.length, 1);
   check('non-quiet adapter: still logs every tick (unthrottled)', normalPollLines.length >= 3, normalPollLines.length);
+
+  console.log('— F7 (fix round): fan-out aggregation for a total outage — >5 silent non-quiet adapters collapse to ONE summary line + ONE alert; <=5 is unchanged (one per adapter)');
+  {
+    const fanoutStale = Date.now() - 3600000;
+    const mkSilent = (i) => ({ name: `rss:fanout${i}`, tier: 3, intervalMs: 90000, quietHealth: false, consecutiveErrors: 1, consecutiveSaveErrors: 0, lastErr: 'HTTP 500', lastOkAt: fanoutStale });
+
+    // 3 silent (<= threshold) -> today's per-adapter behaviour, unchanged
+    const calls3 = [];
+    const alerts3 = { healthAlert: async (name, text) => { calls3.push({ name, text }); } };
+    const sched3 = { health: () => [mkSilent(1), mkSilent(2), mkSilent(3)] };
+    const errs3 = [];
+    const origErr3 = console.error;
+    console.error = (...a) => { errs3.push(a.join(' ')); };
+    const stop3 = startHealth({ scheduler: sched3, alerts: alerts3, intervalMs: 500 });
+    await sleep(50); // one tick only (immediate check(), interval 500ms doesn't fire again in 50ms)
+    stop3();
+    console.error = origErr3;
+    const healthLines3 = errs3.filter((l) => l.startsWith('[health]'));
+    eq('3 silent: 3 per-adapter [health] lines (one tick)', healthLines3.length, 3);
+    eq('3 silent: 3 per-adapter alerts (one tick)', calls3.length, 3);
+    check('3 silent: alert names are the individual adapters, not the aggregate name', calls3.every((c) => /^rss:fanout/.test(c.name)), calls3);
+
+    // 20 silent (> threshold) -> ONE summary line + ONE alert
+    const calls20 = [];
+    const alerts20 = { healthAlert: async (name, text) => { calls20.push({ name, text }); } };
+    const many = Array.from({ length: 20 }, (_, i) => mkSilent(i + 1));
+    const sched20 = { health: () => many };
+    const errs20 = [];
+    const origErr20 = console.error;
+    console.error = (...a) => { errs20.push(a.join(' ')); };
+    const stop20 = startHealth({ scheduler: sched20, alerts: alerts20, intervalMs: 500 });
+    await sleep(50);
+    stop20();
+    console.error = origErr20;
+    const healthLines20 = errs20.filter((l) => l.startsWith('[health]'));
+    eq('20 silent: exactly 1 summary [health] line (not 20)', healthLines20.length, 1);
+    check('summary line names the count and lists <=10 names + "(+K more)"', /^\[health\] 20 sources silent:/.test(healthLines20[0]) && healthLines20[0].split(', ').length >= 10 && /\+10 more/.test(healthLines20[0]), healthLines20[0]);
+    eq('20 silent: exactly 1 alert (not 20)', calls20.length, 1);
+    eq('...sent under a fixed aggregate alert name (so the existing per-name 30-min Discord throttle applies)', calls20[0] && calls20[0].name, 'multiple-sources');
+  }
+
+  console.log('— F7a (Fable follow-up): a silent tier-1 adapter always bypasses the fan-out summary — its own line + alert, even amid a larger fan-out, and it is not counted toward the >5 threshold');
+  {
+    const fanoutStale = Date.now() - 3600000;
+    const mkSilentT3 = (i) => ({ name: `rss:fanoutA${i}`, tier: 3, intervalMs: 90000, quietHealth: false, consecutiveErrors: 1, consecutiveSaveErrors: 0, lastErr: 'HTTP 500', lastOkAt: fanoutStale });
+    const t1Adapter = { name: 'bybit', tier: 1, intervalMs: 5000, quietHealth: false, consecutiveErrors: 1, consecutiveSaveErrors: 0, lastErr: 'HTTP 500', lastOkAt: fanoutStale };
+
+    const calls = [];
+    const alertsMix = { healthAlert: async (name, text) => { calls.push({ name, text }); } };
+    const seven = Array.from({ length: 7 }, (_, i) => mkSilentT3(i + 1));
+    const schedMix = { health: () => [...seven, t1Adapter] };
+    const errsMix = [];
+    const origErrMix = console.error;
+    console.error = (...a) => { errsMix.push(a.join(' ')); };
+    const stopMix = startHealth({ scheduler: schedMix, alerts: alertsMix, intervalMs: 500 });
+    await sleep(50); // one tick only
+    stopMix();
+    console.error = origErrMix;
+
+    const healthLinesMix = errsMix.filter((l) => l.startsWith('[health]'));
+    const summaryLines = healthLinesMix.filter((l) => /^\[health\] 7 sources silent:/.test(l));
+    const t1Lines = healthLinesMix.filter((l) => l.startsWith('[health] bybit '));
+    eq('exactly 1 summary line, and it counts only the 7 tier-3 adapters (not 8)', summaryLines.length, 1);
+    check('the tier-1 adapter is NOT named inside the tier-3 summary line', !summaryLines[0].includes('bybit'), summaryLines[0]);
+    eq('exactly 1 individual line for the tier-1 adapter, separate from the summary', t1Lines.length, 1);
+    eq('total lines = 1 summary + 1 individual tier-1 line (no more, no fewer)', healthLinesMix.length, 2);
+
+    const summaryAlerts = calls.filter((c) => c.name === 'multiple-sources');
+    const t1Alerts = calls.filter((c) => c.name === 'bybit');
+    eq('exactly 1 aggregate alert for the 7 tier-3 adapters', summaryAlerts.length, 1);
+    eq('exactly 1 individual alert for the tier-1 adapter', t1Alerts.length, 1);
+    eq('no other alerts fired', calls.length, 2);
+  }
 
   console.log('— ingest.js wiring');
   const ingestSrc = fs.readFileSync(APP + '/ingest.js', 'utf8');

@@ -23,3 +23,9 @@ User rule (2026-09-25): while ChatGPT/Astra is unavailable, Fable's approval is 
 - 2026-09-25: Phase 3 step 1 (news counts, 📰 chip, stock exclusion, /api/news default 0) Fable APPROVED; DEPLOYED 16:30:47 UTC. Astra review owed.
 - 2026-09-25: Phase 3 step 4A (per-coin Google News, gnews adapter, coinMatch, watchlist, store titleKey/alertable) Fable APPROVED (GO); DEPLOYED 17:02:32 UTC. Astra review owed.
 - 2026-09-25: Date display fix (FeedRow Published col, PostDetail, Rising/Trending by publishedAt, /api/posts 48h window) + Phase 3 step 2 tagger recall (curated coinSources gate, freeOccurrence, people/exchange/BSC rules) Fable APPROVED; DEPLOYED 17:53 UTC. Astra review owed.
+
+## Phase 3 steps 3-fix, 5, 4B/C, 6, 7, 8 + final fix round (cloud session 2026-09-25, Fable-only, pending Astra)
+- Handoff with scope, commits and follow-ups: build/HANDOFF_phase3.md. Diff: `git diff 3295a7b..claude/laughing-cerf-6h5fd6`.
+- Code written by Sonnet (cloud; GLM unreachable), each step Fable APPROVED after 0-2 fix rounds, plus a final whole-project Fable review with a live collector boot (1 blocker + 8 follow-ups fixed, re-approved).
+- Tests: 30 suites; all pass in cloud except supervisor (Windows-only) and details (binance.com blocked).
+- NOT YET DEPLOYED. Astra review owed for all of it.

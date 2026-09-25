@@ -218,6 +218,16 @@ class Store {
               } catch (e2) { /* ignore */ }
             }
             this.storyIndex.remove(id);
+            // F6 (fix round): this.urls missed it (init() only loads the most recent 5000 by
+            // firstSeenAt — an older row a feed re-lists falls outside that window) but the DB's
+            // unique constraint on url just confirmed it already exists. Cache it now (one cheap
+            // lookup for the id) so a later re-poll of the same url short-circuits at the `known`
+            // check above instead of re-attempting a create() — and, for an exchange item, a
+            // detailTickers fetch — on every single poll.
+            try {
+              const existing = await this.prisma.post.findUnique({ where: { url: raw.url }, select: { id: true } });
+              if (existing) this.urls.set(raw.url, { id: existing.id, title: raw.title });
+            } catch (e3) { /* best-effort cache only — a miss here just means the same fallback repeats next poll */ }
             return null;
           }
           try {

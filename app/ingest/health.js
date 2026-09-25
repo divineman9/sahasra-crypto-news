@@ -7,7 +7,15 @@ function toMs(v) {
 }
 
 const QUIET_FAIL_THRESHOLD = 6;
-const QUIET_POLL_LOG_THROTTLE_MS = 3600000; // once/hour per adapter (F7)
+const QUIET_POLL_LOG_THROTTLE_MS = 3600000; // once/hour per adapter
+// F7 (fix round): with ~77 non-quiet adapters, a total network outage would otherwise log ~77
+// "no successful poll" lines a minute and send up to 77 Discord messages per 30-min throttle
+// window. Above this many silent non-quiet adapters in one tick, collapse to ONE summary line and
+// ONE alert (under a fixed alert name so the existing per-name 30-min Discord throttle still
+// applies); at or under it, behaviour is unchanged (one line/alert per adapter).
+const SILENT_FANOUT_THRESHOLD = 5;
+const SILENT_FANOUT_LIST_MAX = 10;
+const SILENT_FANOUT_ALERT_NAME = 'multiple-sources';
 
 function startHealth({ scheduler, alerts, intervalMs = 60000 }) {
   const startedAt = Date.now();
@@ -29,6 +37,7 @@ function startHealth({ scheduler, alerts, intervalMs = 60000 }) {
       } catch (e) {
         return;
       }
+      const silent = []; // {name, text} — non-quiet adapters silent this tick (F7 fan-out)
       for (const a of entries) {
         // Fix round (B1, step 7): the health window must never be tighter than 2x an adapter's own
         // poll interval — a fixed 30-min window falsely flags any 30-min-or-slower adapter (e.g.
@@ -41,12 +50,24 @@ function startHealth({ scheduler, alerts, intervalMs = 60000 }) {
         if (age > limit) {
           const mins = Math.floor(age / 60000);
           const text = `no successful poll for ${mins} min, last error: ${a.lastErr || 'none'}`;
-          const lastLoggedAt = quietPollLoggedAt.get(a.name) || 0;
-          if (!a.quietHealth || Date.now() - lastLoggedAt >= QUIET_POLL_LOG_THROTTLE_MS) {
+          if (!a.quietHealth && a.tier === 1) {
+            // F7a (Fable follow-up): a tier-1 source (the ones the dashboard's own health.ok most
+            // directly depends on) always gets its own immediate line + alert, never folded into
+            // the >5 aggregate summary — a real tier-1 outage must stay individually visible (and
+            // individually throttled by its own name) even during a larger fan-out event.
             console.error(`[health] ${a.name} ${text}`);
-            if (a.quietHealth) quietPollLoggedAt.set(a.name, Date.now());
+            if (alerts) alerts.healthAlert(a.name, text);
+          } else if (!a.quietHealth) {
+            // F7: collected, not logged/alerted here — emitted individually or as one summary
+            // below, once the full silent count for this tick is known.
+            silent.push({ name: a.name, text });
+          } else {
+            const lastLoggedAt = quietPollLoggedAt.get(a.name) || 0;
+            if (Date.now() - lastLoggedAt >= QUIET_POLL_LOG_THROTTLE_MS) {
+              console.error(`[health] ${a.name} ${text}`);
+              quietPollLoggedAt.set(a.name, Date.now());
+            }
           }
-          if (alerts && !a.quietHealth) alerts.healthAlert(a.name, text);
         }
         if ((a.consecutiveSaveErrors || 0) >= 5) {
           const text = `saving items is failing (${a.consecutiveSaveErrors} runs in a row): ${a.lastSaveErr || ''}`;
@@ -71,6 +92,22 @@ function startHealth({ scheduler, alerts, intervalMs = 60000 }) {
             quietDeadLogged.delete(a.name);
             quietPollLoggedAt.delete(a.name);
           }
+        }
+      }
+
+      // F7: emit either one line/alert per silent adapter (today's behaviour, <=threshold) or one
+      // aggregated summary line/alert (above threshold) — never both.
+      if (silent.length > SILENT_FANOUT_THRESHOLD) {
+        const listed = silent.slice(0, SILENT_FANOUT_LIST_MAX).map((s) => s.name);
+        const more = silent.length - listed.length;
+        const tail = more > 0 ? `, … (+${more} more)` : '';
+        const summary = `${silent.length} sources silent: ${listed.join(', ')}${tail}`;
+        console.error(`[health] ${summary}`);
+        if (alerts) alerts.healthAlert(SILENT_FANOUT_ALERT_NAME, summary);
+      } else {
+        for (const s of silent) {
+          console.error(`[health] ${s.name} ${s.text}`);
+          if (alerts) alerts.healthAlert(s.name, s.text);
         }
       }
     } catch (e) {

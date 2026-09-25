@@ -22,6 +22,12 @@ const SOURCES_FILE = path.join(__dirname, '..', 'officialSources.json');
 const INTERVAL_MS = 30 * 60000;
 const SEVEN_D = 7 * 86400000;
 const MAX_ITEMS = 20;
+// B1 (blocker fix round): a GitHub repo's releases.atom mixes stable tags with CI/nightly/testnet
+// tags that don't even look "unstable" by name (sui_v1.82.0_1790353319_ci, v0.34.2-mocha,
+// 3.4.0-b3, 11.0.1-docker, crates-0.37.1, master-with-ledger-fix, aptos-cli-*, move-flow-*, ...).
+// A GitHub repo therefore very rarely has more than a couple of genuinely stable releases inside
+// any 30-min poll window, so the cap is lowered from 20 (shared with forum/blog) to 5.
+const GITHUB_MAX_ITEMS = 5;
 
 // Applied to the release TAG (short, machine-generated version string: "v1.3.0-rc1", "nightly").
 // Anchored on non-letter boundaries rather than \b so that /i's case-folding of the character
@@ -63,15 +69,67 @@ function adapterName(entry) {
   return 'blog:' + hostOf(entry.url);
 }
 
+// Fable follow-up (1): a tag can itself contain a slash (optimism's per-component releases,
+// e.g. "op-batcher/v1.17.0"). The atom feed's <link> always percent-encodes it (.../releases/tag/
+// op-batcher%2Fv1.17.0), but GitHub's own /releases/latest Location header uses a literal slash
+// (.../releases/tag/op-batcher/v1.17.0) — the old `[^/?#]+` capture stopped at that first slash,
+// so tagOf() returned "op-batcher" for the Location header vs "op-batcher/v1.17.0" (decoded) for
+// the atom entry: they could never compare equal, and the adapter emitted nothing for any repo
+// with slash-shaped tags. Capture the whole rest of the path (up to a query/fragment) and
+// decodeURIComponent it either way, so both forms normalise to the same string.
 function tagOf(link) {
-  const m = String(link || '').match(/\/releases\/tag\/([^/?#]+)/);
+  const m = String(link || '').match(/\/releases\/tag\/([^?#]+)/);
   if (m) return decodeURIComponent(m[1]);
   const parts = String(link || '').split('/').filter(Boolean);
-  return parts.length ? parts[parts.length - 1] : '';
+  return parts.length ? decodeURIComponent(parts[parts.length - 1]) : '';
 }
 
 function isUnstableRelease(tag, title) {
   return (tag && TAG_UNSTABLE_RE.test(tag)) || (title && TITLE_UNSTABLE_RE.test(title));
+}
+
+// B1 (blocker fix round): fallback-only strict tag shape, used when GitHub's own
+// /releases/latest redirect can't be read (network/5xx/no Location). A CI/component/misc tag
+// (sui_v1.82.0_<epoch>_ci, v0.34.2-mocha, 3.4.0-b3, 11.0.1-docker, master-with-ledger-fix,
+// crates-0.37.1, nearcore's crates-0.37.x) does not have this shape and is dropped; a real
+// (possibly prefixed/suffixed) stable version tag does: v1.17.6, aptos-node-v1.49.1-hotfix,
+// op-node/v1.19.8, v2026.04-1. NOTE: this intentionally also drops a tag like
+// polkadot-stable2606-2 (no "." at all) in the fallback path — acceptable there since the
+// fallback only runs when GitHub's own /latest redirect (the primary, more precise signal)
+// could not be read at all.
+const STRICT_TAG_RE = /^(?:[a-z][a-z0-9-]*[-_/])?v?\d+(?:\.\d+){1,3}(?:-(?:hotfix|\d+))?$/i;
+// nearcore's crates-0.37.1 has the STRICT_TAG_RE shape (a fully-numeric version after a
+// "word-"-shaped prefix) but is a per-crate publish tag, not the project's own release — explicit
+// deny since the generic prefix group alone can't tell "crates-" apart from a real project prefix.
+const CRATES_PREFIX_RE = /^crates-/i;
+
+function isStrictStableTag(tag) {
+  if (!tag) return false;
+  if (CRATES_PREFIX_RE.test(tag)) return false;
+  return STRICT_TAG_RE.test(tag);
+}
+
+function githubLatestUrl(atomUrl) {
+  return String(atomUrl).replace(/releases\.atom(?:[?#].*)?$/, 'releases/latest');
+}
+
+// B1: read GitHub's own "which release is current" signal — /releases/latest redirects (302) to
+// /releases/tag/<tag> of the newest release that is neither a prerelease nor a draft. Requested
+// with followRedirects:false so we read the Location header instead of downloading the target
+// page. Returns the tag, or null if the request failed or didn't look like a proper redirect
+// (network error, 5xx, unexpected 200, missing Location) — the caller then falls back to
+// isStrictStableTag() over the atom feed.
+async function fetchLatestReleaseTag(atomUrl) {
+  try {
+    const res = await request(githubLatestUrl(atomUrl), { followRedirects: false, timeoutMs: 10000 });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers && typeof res.headers.get === 'function' ? res.headers.get('location') : null;
+      if (loc) return tagOf(loc);
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
 }
 
 function releaseTitle(projectName, rawTitle) {
@@ -86,9 +144,9 @@ function parseDate(it) {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function capAndSort(items) {
+function capAndSort(items, limit = MAX_ITEMS) {
   items.sort((a, b) => b.publishedAt - a.publishedAt);
-  items.length = Math.min(items.length, MAX_ITEMS);
+  items.length = Math.min(items.length, limit);
   return items;
 }
 
@@ -101,29 +159,56 @@ function makeGithubAdapter(entry) {
     if (res.notModified || res.status === 304) return [];
     const parsed = await parser.parseString(res.text);
     const cutoff = Date.now() - SEVEN_D;
-    const items = [];
+    // Parsed and 7-day-cutoff-filtered, but not yet stability-filtered — the primary path below
+    // needs the raw candidates (incl. otherwise-"unstable-looking" ones GitHub itself picked as
+    // latest) to match against the /releases/latest tag; only the fallback path applies a tag
+    // shape filter ahead of time.
+    const candidates = [];
     for (const it of parsed.items || []) {
       const rawTitle = String(it.title || '').trim();
       const url = String(it.link || '').trim();
       if (!rawTitle || !url) continue;
       const publishedAt = parseDate(it);
       if (!publishedAt || publishedAt.getTime() < cutoff) continue;
-      const tag = tagOf(url);
-      if (isUnstableRelease(tag, rawTitle)) continue;
-      items.push({
-        sourceName: name,
-        sourceTier: 3,
-        kind: 'official',
-        exchange: null,
-        title: releaseTitle(entry.name, rawTitle),
-        url,
-        publishedAt,
-        hintCategory: null,
-        hintTickers: [entry.base],
-        sourceDomain: domain,
-      });
+      candidates.push({ tag: tagOf(url), rawTitle, url, publishedAt });
     }
-    return capAndSort(items);
+
+    const buildItem = (c) => ({
+      sourceName: name,
+      sourceTier: 3,
+      kind: 'official',
+      exchange: null,
+      title: releaseTitle(entry.name, c.rawTitle),
+      url: c.url,
+      publishedAt: c.publishedAt,
+      hintCategory: null,
+      hintTickers: [entry.base],
+      sourceDomain: domain,
+    });
+
+    // B1: primary path — GitHub's own /releases/latest redirect names the exact tag it considers
+    // current (newest non-prerelease, non-draft release). Keep only the one atom entry whose tag
+    // equals it (belt-and-braces: still drop it if isUnstableRelease somehow still flags it), so a
+    // poll never emits more than one item. If GitHub named a tag that isn't even in the atom feed
+    // (window/pagination edge case), emit nothing rather than guessing.
+    const latestTag = await fetchLatestReleaseTag(entry.url);
+    if (latestTag !== null) {
+      const match = candidates.find((c) => c.tag === latestTag);
+      if (!match) return [];
+      if (isUnstableRelease(match.tag, match.rawTitle)) return [];
+      return [buildItem(match)];
+    }
+
+    // Fallback: the /latest request failed (network/5xx/no Location) — filter the atom feed
+    // itself by a strict tag shape (drops CI/component/misc tags a plain unstable-word regex
+    // wouldn't catch), plus isUnstableRelease as belt-and-braces.
+    const items = [];
+    for (const c of candidates) {
+      if (!isStrictStableTag(c.tag)) continue;
+      if (isUnstableRelease(c.tag, c.rawTitle)) continue;
+      items.push(buildItem(c));
+    }
+    return capAndSort(items, GITHUB_MAX_ITEMS);
   }
   return { name, tier: 3, intervalMs: INTERVAL_MS, quietHealth: entry.verified !== true, run };
 }
@@ -219,4 +304,10 @@ module.exports = {
   TAG_UNSTABLE_RE,
   TITLE_UNSTABLE_RE,
   GOVERNANCE_RE,
+  // B1 (blocker fix round)
+  STRICT_TAG_RE,
+  isStrictStableTag,
+  githubLatestUrl,
+  fetchLatestReleaseTag,
+  GITHUB_MAX_ITEMS,
 };

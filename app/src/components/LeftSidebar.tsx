@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useFeedStore } from "@/store/useFeedStore";
 import { visibleStories } from "@/lib/filters";
+import { fetchLatest } from "@/lib/feedApi";
 import type { FilterKey } from "@/lib/types";
 
 const FILTERS: { key: FilterKey; label: string; icon: typeof LayoutList }[] = [
@@ -95,7 +96,13 @@ export function LeftSidebar() {
         <input
           type="checkbox"
           checked={hideLowGnews}
-          onChange={(e) => setHideLowGnews(e.target.checked)}
+          onChange={(e) => {
+            // F8 (fix round): hideLowTier4 is now also applied server-side, so a toggle has to
+            // refetch from a clean slate (setHideLowGnews itself resets posts/cursor) rather than
+            // just re-filter what's already in memory.
+            setHideLowGnews(e.target.checked);
+            fetchLatest().catch(() => {});
+          }}
           className="h-3 w-3 accent-emerald-500"
         />
         Hide low-importance (Google News, video, Reddit, whale)

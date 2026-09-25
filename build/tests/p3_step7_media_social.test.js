@@ -580,6 +580,31 @@ function freshYoutube() {
   const envExample = fs.readFileSync(APP + '/.env.example', 'utf8');
   check('all REDDIT_* vars present (empty) with script-app guidance', ['REDDIT_CLIENT_ID=""', 'REDDIT_CLIENT_SECRET=""', 'REDDIT_USERNAME=""', 'REDDIT_PASSWORD=""', 'REDDIT_USER_AGENT=""'].every((k) => envExample.includes(k)) && /reddit\.com\/prefs\/apps/.test(envExample), envExample);
 
+  console.log('— F4 (fix round): Reddit 2FA advice corrected (password:otp only works for the first token; the password grant re-runs hourly)');
+  check('no longer advises "password:otp" as a working option', !/password:otp|password.*:.*123456.*otp requires|yourpassword:123456/i.test(envExample), envExample);
+  check('advises a dedicated script-app account with 2FA disabled instead', /2FA/.test(envExample) && /disabled/i.test(envExample) && /dedicated/i.test(envExample), envExample);
+
+  console.log('— F5 (fix round): app/.env.example documents every ingest knob (commented, with its real default)');
+  const f5Vars = ['GNEWS_ENABLED', 'GNEWS_TIERS', 'GNEWS_DAILY_BUDGET', 'GNEWS_TIER_A_MIN', 'GNEWS_STATE_FILE', 'TG_WIRES_ENABLED', 'OFFICIAL_ENABLED', 'YOUTUBE_ENABLED', 'REDDIT_ENABLED', 'NEWS_REDIS', 'COINGECKO_DEMO_KEY', 'NONCOIN_CACHE_FILE', 'EVENTS_LIVE_JSON', 'NEWSFILE_CHIPS_TAKE', 'NEWSFILE_COUNTS_TAKE'];
+  eq('every F5 knob is present in app/.env.example', f5Vars.filter((v) => !new RegExp('^' + v + '=', 'm').test(envExample)), []);
+  check('GNEWS_ENABLED documented default matches the code (1)', /GNEWS_ENABLED="1"/.test(envExample) && /process\.env\.GNEWS_ENABLED !== '0'/.test(fs.readFileSync(APP + '/ingest/adapters/gnews.js', 'utf8')));
+  check('GNEWS_DAILY_BUDGET documented default matches the code (5000)', /GNEWS_DAILY_BUDGET="5000"/.test(envExample) && /GNEWS_DAILY_BUDGET \|\| 5000/.test(fs.readFileSync(APP + '/ingest/adapters/gnews.js', 'utf8')));
+  check('GNEWS_TIER_A_MIN documented default matches the code (20)', /GNEWS_TIER_A_MIN="20"/.test(envExample) && /GNEWS_TIER_A_MIN \|\| 20/.test(fs.readFileSync(APP + '/ingest/adapters/gnews.js', 'utf8')));
+  check('GNEWS_TIERS documented default matches the code (A,B,C) and recommends A,B for the first day', /GNEWS_TIERS="A,B,C"/.test(envExample) && /A,B/.test(envExample) && /first day/i.test(envExample));
+  check('TG_WIRES_ENABLED / OFFICIAL_ENABLED / YOUTUBE_ENABLED / REDDIT_ENABLED all documented default "1" and match ingest.js gating', ['TG_WIRES_ENABLED', 'OFFICIAL_ENABLED', 'YOUTUBE_ENABLED', 'REDDIT_ENABLED'].every((v) => new RegExp(v + '="1"').test(envExample) && new RegExp(v + `.*!==\\s*'0'`).test(ingestSrc)));
+
+  console.log('— Fable follow-up (3): reworded .env.example comments verified against the actual code, not just re-asserted');
+  const gnewsSrc = fs.readFileSync(APP + '/ingest/adapters/gnews.js', 'utf8');
+  check('GNEWS_TIER_A_MIN comment states the real floor formula (max(this, ceil(1440*nA/(0.9*budget))))', /max\(this, ceil\(1440 \* nA \/ \(0\.9 \* GNEWS_DAILY_BUDGET\)\)\)/.test(envExample) && /Math\.max\(minMin, Math\.ceil\(\(1440 \* n\) \/ \(0\.9 \* budget\)\)\)/.test(gnewsSrc));
+  check('GNEWS_DAILY_BUDGET comment states UTC-calendar-day reset (matches the code\'s own day key: toISOString().slice(0,10))', /UTC calendar day/.test(envExample) && /toISOString\(\)\.slice\(0, 10\)/.test(gnewsSrc) && /st\.day !== day/.test(gnewsSrc));
+  check('GNEWS_STATE_FILE comment lists the actual per-coin fields the code writes (nextDueAt, lastOkAt, firstDone, tier, lastListedAt)', ['nextDueAt', 'lastOkAt', 'firstDone', 'tier', 'lastListedAt'].every((f) => envExample.includes(f)) && ['nextDueAt', 'lastOkAt', 'firstDone', 'lastListedAt'].every((f) => gnewsSrc.includes(f)));
+  const supervisorSrc = fs.readFileSync(APP + '/supervisor.js', 'utf8');
+  check('supervisor.js really does inject NEWS_REDIS:\'off\' for the default (non---with-ui) ingest child, confirming the .env.example claim', /NEWS_REDIS:\s*'off'/.test(supervisorSrc));
+  check('.env.example\'s NEWS_REDIS comment names supervisor.js, its default-mode override, and --with-ui\'s exception', /supervisor\.js/.test(envExample) && /NEWS_REDIS=off/i.test(envExample) && /--with-ui/.test(envExample));
+  check('NONCOIN_CACHE_FILE comment matches the code\'s actual source (Binance exchangeInfo underlyingType, non-coin perp bases)', /underlyingType/.test(envExample) && /underlyingType/.test(fs.readFileSync(APP + '/ingest/tickers.js', 'utf8')));
+  const newsFileSrc = fs.readFileSync(APP + '/ingest/newsFile.js', 'utf8');
+  check('NEWSFILE_CHIPS_TAKE / NEWSFILE_COUNTS_TAKE documented defaults (5000 / 20000) match the code', /5000/.test(envExample) && /20000/.test(envExample) && /NEWSFILE_CHIPS_TAKE \|\| 5000/.test(newsFileSrc) && /NEWSFILE_COUNTS_TAKE \|\| 20000/.test(newsFileSrc));
+
   http.request = realReq;
   await prisma.$disconnect();
   done('p3_step7_media_social');

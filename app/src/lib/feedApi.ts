@@ -14,9 +14,16 @@ function isPostDTO(x: unknown): x is PostDTO {
   );
 }
 
+// F8 (fix round): the server now supports filtering out low-importance tier-4 rows itself
+// (`hideLowTier4=1`) — pass it whenever the store's hideLowGnews toggle is on, so a hidden row
+// never counts against the 7-day scroll's 3000-post in-memory cap in the first place.
+function hideLowTier4Param(): string {
+  return useFeedStore.getState().hideLowGnews ? "&hideLowTier4=1" : "";
+}
+
 export async function fetchLatest(): Promise<void> {
   try {
-    const res = await fetch("/api/posts?limit=50", { cache: "no-store" });
+    const res = await fetch(`/api/posts?limit=50${hideLowTier4Param()}`, { cache: "no-store" });
     if (!res.ok) throw new Error(`fetchLatest failed: ${res.status}`);
     const data: unknown = await res.json();
     const payload = data as { posts?: unknown[]; nextCursor?: string | null } | null;
@@ -45,7 +52,7 @@ export async function fetchOlder(): Promise<void> {
     // keyset cursor only encodes "strictly before this row's (firstSeenAt, id)", so switching range
     // mid-pagination just widens which older rows now qualify, it doesn't skip or duplicate any.
     const res = await fetch(
-      `/api/posts?limit=50&range=7d&cursor=${encodeURIComponent(s.nextCursor)}`,
+      `/api/posts?limit=50&range=7d&cursor=${encodeURIComponent(s.nextCursor)}${hideLowTier4Param()}`,
       { cache: "no-store" }
     );
     if (res.ok) {

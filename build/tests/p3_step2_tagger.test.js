@@ -60,5 +60,11 @@ const tag = (t, kind = 'news') => [...T.tagTickers(t, [], { kind })].sort();
   eq('Pudgy Penguins token PENGU rallies → PENGU', tag('Pudgy Penguins token PENGU rallies'), ['PENGU']);
   eq('Worldcoin rebrands → WLD', tag('Worldcoin rebrands to World Network'), ['WLD']);
   eq('drain $12M from Arbitrum DEX → none (chain context)', tag('Hackers drain $12M from Arbitrum DEX'), []);
+
+  console.log('— F3 (fix round): finalizeCurated no longer bypasses media/social/official kinds — curated alias recall now applies to them too');
+  eq('kind social: Reddit thread title, curated alias "Ethena" → ENA', tag('r/CryptoCurrency: Ethena governance vote passes', 'social'), ['ENA']);
+  eq('kind media == kind news for the same title (curated finalizer runs identically for both)', tag('Is Sui the next Solana?', 'media'), tag('Is Sui the next Solana?', 'news'));
+  eq('kind official: hint ticker still survives the curated finalizer', [...T.tagTickers('Bitcoin Core ships a routine point release', ['BTC'], { kind: 'official' })], ['BTC']);
+
   done('p3_step2_tagger');
 })().catch((e) => { console.error('TEST CRASH', e); process.exit(2); });

@@ -22,7 +22,7 @@ function parseRetryAfter(value) {
   return null;
 }
 
-async function request(url, { method = 'GET', headers = {}, body, ua, timeoutMs = 10000, conditional = false } = {}) {
+async function request(url, { method = 'GET', headers = {}, body, ua, timeoutMs = 10000, conditional = false, followRedirects = true } = {}) {
   const finalHeaders = { ...headers };
   finalHeaders['User-Agent'] = ua || BROWSER_UA;
   if (conditional && condCache.has(url)) {
@@ -42,7 +42,11 @@ async function request(url, { method = 'GET', headers = {}, body, ua, timeoutMs 
         method,
         headers: finalHeaders,
         body,
-        redirect: 'follow',
+        // B1 (fix round): followRedirects:false (redirect:'manual') lets a caller read a 3xx's
+        // Location header itself instead of being auto-followed to the final page — used by
+        // official.js to read GitHub's /releases/latest redirect target without downloading it.
+        // Default unchanged (follow) for every existing caller.
+        redirect: followRedirects ? 'follow' : 'manual',
         signal: controller.signal,
       });
     } catch (err) {
@@ -50,12 +54,14 @@ async function request(url, { method = 'GET', headers = {}, body, ua, timeoutMs 
     }
 
     const status = res.status;
+    // A manual (unfollowed) redirect is a normal, successful response for the caller to inspect
+    // (status + Location header) — only >=400 is an error, same as the follow case.
     if (status >= 400) {
       const retryAfterMs = parseRetryAfter(res.headers.get('retry-after'));
       throw new HttpError(`HTTP ${status} for ${url}`, status, retryAfterMs);
     }
 
-    if (status !== 304) text = await res.text();
+    if (status !== 304 && !(status >= 300 && status < 400 && !followRedirects)) text = await res.text();
   } finally {
     clearTimeout(timer);
   }

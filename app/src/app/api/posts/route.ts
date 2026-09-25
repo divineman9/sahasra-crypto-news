@@ -19,6 +19,10 @@ export async function GET(req: Request) {
   // Default stays 48h for backward compatibility with any other caller of this route that doesn't
   // pass `range` — the feed itself asks for 7d once it starts paging (see fetchOlder in feedApi.ts).
   const range: "48h" | "7d" = url.searchParams.get("range") === "7d" ? "7d" : "48h";
+  // F8 (fix round): server-side hide for the 7-day scroll — a tier-4, low-importance row (mostly
+  // gnews volume) is filtered out in SQL rather than downloaded and hidden client-side, so toggling
+  // it on doesn't burn through the feed's 3000-post in-memory cap on rows the user never sees.
+  const hideLowTier4 = url.searchParams.get("hideLowTier4") === "1";
 
   try {
     let cursorRow: { id: string; firstSeenAt: Date } | null = null;
@@ -33,6 +37,9 @@ export async function GET(req: Request) {
     }
 
     const windowWhere = { publishedAt: { gte: new Date(Date.now() - RANGE_MS[range]) } };
+    const tierWhere = hideLowTier4
+      ? { NOT: { AND: [{ sourceTier: 4 }, { importance: { lt: 30 } }] } }
+      : null;
 
     // Explicit keyset on (firstSeenAt desc, id desc) instead of Prisma's `cursor: {id}, skip: 1`:
     // skip-1 assumes the cursor row itself still matches `where`, which isn't guaranteed once a
@@ -41,19 +48,17 @@ export async function GET(req: Request) {
     // missing cursor instead of returning it (the same bug Fable found and fixed in /api/coin). An
     // explicit "strictly before the cursor's (firstSeenAt, id)" filter has no such failure mode: it
     // only depends on the cursor row's own timestamp/id, never on whether it still matches `where`.
-    const pageWhere = cursorRow
-      ? {
-          AND: [
-            windowWhere,
-            {
-              OR: [
-                { firstSeenAt: { lt: cursorRow.firstSeenAt } },
-                { firstSeenAt: cursorRow.firstSeenAt, id: { lt: cursorRow.id } },
-              ],
-            },
-          ],
-        }
-      : windowWhere;
+    const andClauses: object[] = [windowWhere];
+    if (tierWhere) andClauses.push(tierWhere);
+    if (cursorRow) {
+      andClauses.push({
+        OR: [
+          { firstSeenAt: { lt: cursorRow.firstSeenAt } },
+          { firstSeenAt: cursorRow.firstSeenAt, id: { lt: cursorRow.id } },
+        ],
+      });
+    }
+    const pageWhere = andClauses.length > 1 ? { AND: andClauses } : andClauses[0];
 
     const rows = await prisma.post.findMany({
       where: pageWhere,

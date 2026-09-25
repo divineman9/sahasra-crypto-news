@@ -449,9 +449,18 @@ function tagTickersInner(title, hint, opts = {}) {
   return out;
 }
 
+// F3 (fix round): media/social/official posts get the same curated-alias recall/ambiguity gate as
+// news — the gate used to bail out for any kind other than news/undefined/null, so e.g. a Reddit
+// thread ("r/CryptoCurrency: Ethena governance vote passes", kind social) or a YouTube video title
+// ("Is Sui the next Solana?", kind media) never got curated aliases like "Ethena"/"Sui" resolved
+// to ENA/SUI at all. Hint tickers (raw.hintTickers) always survived anyway — hintSet below is
+// built straight from `hint`, independent of opts.kind — this only widens which kinds get the
+// curated finalizer's OWN alias/evidence matching.
+const CURATED_FINALIZE_KINDS = new Set(['news', 'media', 'social', 'official', undefined, null]);
+
 function finalizeCurated(title, hint, opts, out) {
   if (opts.kind === 'exchange' || opts.kind === 'symbol') return out;
-  if (!(opts.kind === 'news' || opts.kind === undefined || opts.kind === null)) return out;
+  if (!CURATED_FINALIZE_KINDS.has(opts.kind)) return out;
   const CM = require('./coinMatch'); // lazy: avoids a circular require at load time
   const hintSet = new Set((hint || []).map((h) => stripPrefix(String(h).toUpperCase())));
   const curated = new Set(CM.listBases());

@@ -176,7 +176,15 @@ export const useFeedStore = create<FeedState>()(
 
       setNextCursor: (c) => set({ nextCursor: c }),
       setLoadingOlder: (b) => set({ loadingOlder: b }),
-      setHideLowGnews: (v) => set({ hideLowGnews: v }),
+      // F8 (fix round): hideLowTier4 is now applied server-side too, so a toggle can't just flip
+      // the flag and let the client-side filter (visibleStories) hide/reveal rows already in
+      // memory — pages fetched under the old filter and pages fetched under the new one would mix.
+      // Reset to a clean slate (posts + pagination cursor) on an actual change; the caller (the
+      // toggle's onChange handler) re-fetches the first page right after calling this.
+      setHideLowGnews: (v) => {
+        if (get().hideLowGnews === v) return;
+        set({ hideLowGnews: v, posts: [], nextCursor: undefined, cursorStale: false });
+      },
       setFilter: (f) => set({ filter: f }),
       setWsStatus: (s) => set({ wsStatus: s }),
       setCursorStale: (v) => set({ cursorStale: v }),

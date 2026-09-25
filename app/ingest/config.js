@@ -74,11 +74,14 @@ const MACRO_FILTER = '\\b(Fed|FOMC|CPI|rate (cut|hike)s?|Powell|federal reserve|
 // source; the 7 new wire channels are curated but unverified — `verified: false` (the default
 // when omitted) makes their adapter `quietHealth: true` in telegram.js, same treatment as an
 // unverified officialSources.json entry (see official.js / health.js / scheduler.js).
+// F2 (fix round): the 4 tier-2 wires raised from 60s to 120s so t.me's total request rate across
+// all 7 wire channels drops from 7.5 to 5.5 req/min, making tg:bwenews (tier 1, its own dedicated
+// adapter, 30s) less likely to be throttled by t.me alongside them.
 const TG_CHANNELS = [
-  { channel: 'TreeNewsFeed', tier: 2, intervalMs: 60000, verified: false },
-  { channel: 'Walter_Bloomberg', tier: 2, intervalMs: 60000, filter: CRYPTO_FILTER + '|' + MACRO_FILTER, verified: false },
-  { channel: 'WatcherGuru', tier: 2, intervalMs: 60000, verified: false },
-  { channel: 'wublockchainenglish', tier: 2, intervalMs: 60000, verified: false },
+  { channel: 'TreeNewsFeed', tier: 2, intervalMs: 120000, verified: false },
+  { channel: 'Walter_Bloomberg', tier: 2, intervalMs: 120000, filter: CRYPTO_FILTER + '|' + MACRO_FILTER, verified: false },
+  { channel: 'WatcherGuru', tier: 2, intervalMs: 120000, verified: false },
+  { channel: 'wublockchainenglish', tier: 2, intervalMs: 120000, verified: false },
   { channel: 'PeckShieldAlert', tier: 3, intervalMs: 120000, verified: false },
   { channel: 'CertiKAlert', tier: 3, intervalMs: 120000, verified: false },
   { channel: 'whale_alert_io', tier: 4, intervalMs: 120000, alertable: false, maxImportance: 10, verified: false },

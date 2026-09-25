@@ -276,7 +276,7 @@ const URL_PREFIX = 'https://test.local/p3s8/';
     const days = (n) => n * 24 * 3600 * 1000;
 
     let seq = 0;
-    async function mkPost({ offsetMs, userLabel = null, importance = 20, sourceName = 'rss:p8' }) {
+    async function mkPost({ offsetMs, userLabel = null, importance = 20, sourceName = 'rss:p8', sourceTier = 4 }) {
       seq += 1;
       const publishedAt = new Date(now + offsetMs);
       return prisma.post.create({
@@ -285,7 +285,7 @@ const URL_PREFIX = 'https://test.local/p3s8/';
           url: `${URL_PREFIX}${seq}`,
           sourceDomain: 'test.local',
           sourceName,
-          sourceTier: 4,
+          sourceTier,
           kind: 'news',
           sentiment: 'neutral',
           category: 'other',
@@ -327,8 +327,14 @@ const URL_PREFIX = 'https://test.local/p3s8/';
       tieIds.push(p.id);
     }
 
+    // F8 fixtures: server-side hideLowTier4 exclusion, exercised inside the 7d range/pagination.
+    const lowTier4 = await mkPost({ offsetMs: -days(2), sourceTier: 4, importance: 10 });
+    const boundaryTier4 = await mkPost({ offsetMs: -days(2), sourceTier: 4, importance: 30 }); // ==30 -> kept (only <30 excluded)
+    const justBelowTier4 = await mkPost({ offsetMs: -days(2), sourceTier: 4, importance: 29 });
+    const lowNonTier4 = await mkPost({ offsetMs: -days(2), sourceTier: 3, importance: 10 }); // low importance but not tier 4 -> kept
+
     const ourIds48h = new Set([within48h1.id, within48h2.id, dismissedWithin48h.id, ...tieIds]);
-    const ourIds7d = new Set([...ourIds48h, sevenDay1.id, sevenDay2.id]);
+    const ourIds7d = new Set([...ourIds48h, sevenDay1.id, sevenDay2.id, lowTier4.id, boundaryTier4.id, justBelowTier4.id, lowNonTier4.id]);
 
     await refuseIfPortInUse();
 
@@ -412,6 +418,33 @@ const URL_PREFIX = 'https://test.local/p3s8/';
       const orderedTieIds = tieIndices.map((i) => ids7[i]);
       const expectedTieOrder = [...tieIds].sort().reverse();
       eq('tied rows are ordered id-desc (the tie-break)', orderedTieIds, expectedTieOrder);
+    }
+
+    console.log('— /api/posts: F8 (fix round) — hideLowTier4=1 excludes tier-4/importance<30 rows server-side, keyset pagination still covers everything else exactly once');
+    {
+      const ids7Filtered = await collectIds('7d&hideLowTier4=1');
+      eq('no duplicate ids across filtered 7d pagination', new Set(ids7Filtered).size, ids7Filtered.length);
+      const setFiltered = new Set(ids7Filtered);
+      check('tier-4 importance-10 fixture excluded', !setFiltered.has(lowTier4.id));
+      check('tier-4 importance-29 fixture excluded (just under the <30 cutoff)', !setFiltered.has(justBelowTier4.id));
+      check('tier-4 importance-30 fixture INCLUDED (boundary: only <30 is excluded, not <=30)', setFiltered.has(boundaryTier4.id));
+      check('tier-3 importance-10 fixture INCLUDED (low importance but not tier 4)', setFiltered.has(lowNonTier4.id));
+      // Every earlier fixture in this suite (within48h*, sevenDay*, the tie group, dismissedWithin48h)
+      // is itself tier-4/importance-20 by default — i.e. it ALSO matches the hideLowTier4 exclusion
+      // — so the true "kept" subset of ourIds7d under this filter is only the two >=30-importance /
+      // non-tier-4 fixtures above; everything else in ourIds7d is expected to be excluded too.
+      const keptOurIds7d = new Set([boundaryTier4.id, lowNonTier4.id]);
+      const excludedOurIds7d = new Set([...ourIds7d].filter((id) => !keptOurIds7d.has(id)));
+      eq(
+        'the two kept fixtures each appear exactly once across the filtered, paginated 7d result',
+        [...keptOurIds7d].map((id) => ids7Filtered.filter((x) => x === id).length),
+        [1, 1]
+      );
+      eq(
+        'every other one of our 7d fixtures (all tier-4/importance<30 by default) is excluded — none of them leak through at any page',
+        [...excludedOurIds7d].filter((id) => setFiltered.has(id)),
+        []
+      );
     }
 
     console.log('— /api/posts: F5 — cursor set to a mid-tie-group id (the OR-clause tie branch)');
