@@ -12,6 +12,7 @@
 
 ## Working rules (user's)
 - Claude orchestrates only; **all code is written by GLM** (`python "D:\claude projects\glm_build.py" --model glm --file <abs> --task "<spec>"`). Send GLM edits **one at a time with ~20 s pauses** (rate limit code 1302 otherwise).
+- **Cloud sessions (claude.ai/code):** GLM is unreachable there, so code is written by a **Sonnet** subagent (Agent model "sonnet"); Fable still reviews. Back on the local clone, switch code-writing back to GLM.
 - Test-first: write/extend `build/tests/*.test.js`, then GLM, then run the suite.
 - **Fable reviews every step** (Agent model "fable"); deploy only after Fable APPROVED. **Astra (ChatGPT) is for batched review passes only** — pending items are listed in `build/astra_pending_review.md`.
 - Deploy = STOP file → wait for node procs to exit → remove STOP → run `start-news-hidden.vbs`.
