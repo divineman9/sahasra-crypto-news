@@ -32,3 +32,6 @@ coverage/
 dist/
 # Secrets that live inside build/
 build/tests/.test_db_url
+
+# Runtime cache written by the gnews adapter
+app/ingest/cache/gnews_tiers.json
