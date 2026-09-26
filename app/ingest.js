@@ -31,6 +31,7 @@ const telegram = require('./ingest/adapters/telegram');
 const official = require('./ingest/adapters/official');
 const youtube = require('./ingest/adapters/youtube');
 const reddit = require('./ingest/adapters/reddit');
+const bluesky = require('./ingest/adapters/bluesky');
 const { loadWatchBases } = require('./ingest/watchlist');
 
 const TIER_CACHE_FILE = path.join(__dirname, 'ingest', 'cache', 'gnews_tiers.json');
@@ -141,6 +142,7 @@ async function main() {
     // REDDIT_CLIENT_ID/SECRET/USERNAME/PASSWORD aren't all set — REDDIT_ENABLED only gates
     // whether we even try.
     ...(process.env.REDDIT_ENABLED !== '0' ? reddit.make() : []),
+    ...bluesky.make(),
   ];
 
   let futuresFirstRun = true;

@@ -30,3 +30,4 @@ User rule (2026-09-25): while ChatGPT/Astra is unavailable, Fable's approval is 
 - Tests: 30 suites; all pass in cloud except supervisor (Windows-only) and details (binance.com blocked).
 - NOT YET DEPLOYED. Astra review owed for all of it.
 - 2026-09-26: All-caps tagger fix (isAllCapsTitle + relay labels + unambiguous allow-list) Fable APPROVED; DEPLOYED 04:01 UTC. Astra review owed.
+- 2026-09-26: GitHub releases API fallback, keyless Reddit RSS, Bluesky curated accounts — Fable APPROVED; DEPLOYED 05:19 UTC. Astra review owed.

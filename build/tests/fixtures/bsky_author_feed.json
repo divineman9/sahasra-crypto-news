@@ -1,0 +1,320 @@
+{
+ "_note": "Real app.bsky.feed.getAuthorFeed response for actor=cascoinfoundation.org (filter=posts_with_replies, limit=30) captured 2026-09-26 ~04:40 UTC from public.api.bsky.app, trimmed to 10 items (7 posts incl. one <20-char post, 1 repost with reason.$type=app.bsky.feed.defs#reasonRepost, 2 replies with record.reply). Avatars/facets/labels/embed payloads removed. createdAt/indexedAt replaced by {{token}} placeholders for the test's fillDates() (fresh_* = now minus N hours, stale_49h = now minus 49 h).",
+ "cursor": "2026-09-25T17:10:54.245Z",
+ "feed": [
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwffxvjfps2m",
+    "cid": "bafyreifrogb6a2552pf7mubl3thou5irhsdul4sszhvllnbbzm66vrjeqe",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_1h}}",
+     "text": "A funny thing is happening on crypto Twitter where Tether working with yet another terrible, illegal payment processor is seen as “one more round of Tether FUD” and traders are suggesting it’s the dip before the bull run for Bitcoin and crypto.\n\nThat’s how broken the regulatory regime is right now.",
+     "langs": [
+      "en"
+     ]
+    },
+    "replyCount": 1,
+    "repostCount": 0,
+    "likeCount": 5,
+    "indexedAt": "{{fresh_1h}}"
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwf46gicgc2m",
+    "cid": "bafyreidcieiyyfaxa5zgwijal7bf6knka3aftx6jqqeqxxqjwvpvi4vhf4",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_3h}}",
+     "text": "I’ll tell you exactly who’s loving the iced coffee discourse: The Washington Post",
+     "langs": [
+      "en"
+     ]
+    },
+    "replyCount": 1,
+    "repostCount": 1,
+    "likeCount": 5,
+    "indexedAt": "{{fresh_3h}}"
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mweyhss7cs2m",
+    "cid": "bafyreianhk6glpn37ymmhm63j5kymaoeixh5kr5lxyn3gfkefl4wmtnqjq",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_6h}}",
+     "text": "Tether’s response to this was basically “just a tiny bit of our money is stuck with these shady illegal money processors,” which\n\nuh\n\nis a pretty strange response!",
+     "langs": [
+      "en"
+     ],
+     "embed": {
+      "$type": "app.bsky.embed.record"
+     }
+    },
+    "replyCount": 2,
+    "repostCount": 2,
+    "likeCount": 12,
+    "indexedAt": "{{fresh_6h}}"
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwewenh3oc2m",
+    "cid": "bafyreides6qf3xwnwivmxtdy47zpxfbhao5pmkc2hjbpvciudstbilziai",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_12h}}",
+     "text": "Please God, not me agreeing with an a16z crypto bro, please, please God",
+     "langs": [
+      "en"
+     ],
+     "embed": {
+      "$type": "app.bsky.embed.images"
+     }
+    },
+    "replyCount": 1,
+    "repostCount": 0,
+    "likeCount": 13,
+    "indexedAt": "{{fresh_12h}}"
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwew55tkds2m",
+    "cid": "bafyreifsfwc7jgesjkbu72xhixhbtgnrpzz6xnlo2k2y3pvc66h5ltzcqy",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_47h}}",
+     "text": "But when I “go rogue” and “meddle with US government websites” I’m part of an “intricate network of Chinese Communist spies”\n\nokay, whatever",
+     "langs": [
+      "en"
+     ],
+     "embed": {
+      "$type": "app.bsky.embed.record"
+     }
+    },
+    "replyCount": 0,
+    "repostCount": 0,
+    "likeCount": 14,
+    "indexedAt": "{{fresh_47h}}"
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwessqjnac2m",
+    "cid": "bafyreigf4q6b7bnox6hnf5fdmgvzesbszaor7se2omu4xic6x6mcxkswai",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{stale_49h}}",
+     "text": "I had no idea Isabel Perón is still alive.",
+     "langs": [
+      "en"
+     ]
+    },
+    "replyCount": 2,
+    "repostCount": 1,
+    "likeCount": 3,
+    "indexedAt": "{{stale_49h}}"
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwf2ntaj3k2m",
+    "cid": "bafyreicshuxgl6finxru3upn3qlgjgxevnskwn5atooeoajnduwzgegu5m",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_2h}}",
+     "text": "Excellent",
+     "langs": [
+      "en"
+     ],
+     "embed": {
+      "$type": "app.bsky.embed.images"
+     }
+    },
+    "replyCount": 1,
+    "repostCount": 3,
+    "likeCount": 9,
+    "indexedAt": "{{fresh_2h}}"
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mgajtkhn422v",
+    "cid": "bafyreibc7z7aycyknwjnxrfl6jbjkfzhgslmyatyni4ihmeiz6o3e6ud7i",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_4h}}",
+     "text": "Me: tether is my worst nightmare\n\nTether: give us all your sleep data\n\nMe: what?\n\nTether: you said we’re your worst nightmare, give us all your sleep data\n\nMe: what is happening right now?\n\nTether: shhhhh sleep now",
+     "langs": [
+      "en"
+     ],
+     "embed": {
+      "$type": "app.bsky.embed.images"
+     }
+    },
+    "replyCount": 7,
+    "repostCount": 8,
+    "likeCount": 48,
+    "indexedAt": "{{fresh_4h}}"
+   },
+   "reason": {
+    "$type": "app.bsky.feed.defs#reasonRepost",
+    "by": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "indexedAt": "{{fresh_4h}}"
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwfgi5e67s2m",
+    "cid": "bafyreifh2o3shpa6cvddbd4zqk2xiojliytexysemb4y2e2no6qf5xu3qq",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_5h}}",
+     "text": "It’s impossible that billionaires in the UK have brought a fresh set of hundreds of eyes on the largest stablecoin in the world.\n\nIt’s impossible that reporters have stumbled on troubling news.\n\nIt’s impossible Tether is still doing fucked up shit.\n\nThe more believable story is an insane conspiracy.",
+     "langs": [
+      "en"
+     ],
+     "reply": {
+      "parent": {
+       "cid": "bafyreid4yzn75se3qm5lbtn2tmxyshdduj4ivpaoyo5tvloqujjkqtkvxq",
+       "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwfg43yd3c2m"
+      },
+      "root": {
+       "cid": "bafyreifrogb6a2552pf7mubl3thou5irhsdul4sszhvllnbbzm66vrjeqe",
+       "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwffxvjfps2m"
+      }
+     }
+    },
+    "replyCount": 0,
+    "repostCount": 0,
+    "likeCount": 4,
+    "indexedAt": "{{fresh_5h}}"
+   },
+   "reply": {
+    "root": {
+     "$type": "app.bsky.feed.defs#postView",
+     "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwffxvjfps2m",
+     "author": {
+      "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+      "handle": "cascoinfoundation.org",
+      "displayName": "H.E. Cas Piancey"
+     }
+    },
+    "parent": {
+     "$type": "app.bsky.feed.defs#postView",
+     "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwfg43yd3c2m",
+     "author": {
+      "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+      "handle": "cascoinfoundation.org",
+      "displayName": "H.E. Cas Piancey"
+     }
+    }
+   }
+  },
+  {
+   "post": {
+    "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwfg43yd3c2m",
+    "cid": "bafyreid4yzn75se3qm5lbtn2tmxyshdduj4ivpaoyo5tvloqujjkqtkvxq",
+    "author": {
+     "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+     "handle": "cascoinfoundation.org",
+     "displayName": "H.E. Cas Piancey"
+    },
+    "record": {
+     "$type": "app.bsky.feed.post",
+     "createdAt": "{{fresh_7h}}",
+     "text": "Tether, a company with $180 billion of AUM, is Teflon: impossible for bad news to stick.\n\nSurely journalists have been working with financial and banking institutions to find some degree of bad news about the largest stablecoin in the world. This is definitely a real thing that happens.",
+     "langs": [
+      "en"
+     ],
+     "reply": {
+      "parent": {
+       "cid": "bafyreifrogb6a2552pf7mubl3thou5irhsdul4sszhvllnbbzm66vrjeqe",
+       "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwffxvjfps2m"
+      },
+      "root": {
+       "cid": "bafyreifrogb6a2552pf7mubl3thou5irhsdul4sszhvllnbbzm66vrjeqe",
+       "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwffxvjfps2m"
+      }
+     }
+    },
+    "replyCount": 1,
+    "repostCount": 0,
+    "likeCount": 4,
+    "indexedAt": "{{fresh_7h}}"
+   },
+   "reply": {
+    "root": {
+     "$type": "app.bsky.feed.defs#postView",
+     "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwffxvjfps2m",
+     "author": {
+      "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+      "handle": "cascoinfoundation.org",
+      "displayName": "H.E. Cas Piancey"
+     }
+    },
+    "parent": {
+     "$type": "app.bsky.feed.defs#postView",
+     "uri": "at://did:plc:gujnzolp2n4upahg3zb6u6zx/app.bsky.feed.post/3mwffxvjfps2m",
+     "author": {
+      "did": "did:plc:gujnzolp2n4upahg3zb6u6zx",
+      "handle": "cascoinfoundation.org",
+      "displayName": "H.E. Cas Piancey"
+     }
+    }
+   }
+  }
+ ]
+}

@@ -10,6 +10,7 @@ const KEEP_DAYS = 7;
 
 // Regulator feeds are general; keep only crypto-related press releases.
 const CRYPTO_FILTER = '\\b(crypto|bitcoin|ether(eum)?\\b|digital asset|stablecoin|blockchain|tokens?\\b|tokeni[sz]ed\\b|tokeni[sz]ation\\b|virtual currenc|defi\\b|decentrali[sz]ed finance|mixer|NFT)';
+const BSKY_FILTER = CRYPTO_FILTER + '|' + '\\b(BTC|ETH|SOL|XRP|USDT|USDC|Tether|Circle|Coinbase|Binance|Kraken|Bitget|Bybit|OKX|FTX|SBF|Bankman|Celsius|Do Kwon|Tornado|Roman Storm|Samourai|SEC|CFTC|Gensler|Atkins|Peirce|GENIUS Act|Clarity Act|MiCA|ETFs?|Saylor|MicroStrategy|treasury compan(y|ies)|miners?|mining|halving|hashrate|Lightning|Knots|Bitcoin Core|Solana|Ripple|Cardano|Dogecoin|memecoins?|airdrops?|rug ?pull|exploit(ed|s)?|hack(ed|er|ers|s)?|drain(ed|er)?|bridge|validators?|staking|restaking|rollups?|L2s?|zk|zero-knowledge|mainnet|smart contracts?|wallets?|self-custody|custod(y|ian)|on-?chain|DAO|Web3|Zcash|Monero|privacy coin|prediction markets?|Polymarket|Kalshi|Ponzi|pig[- ]butchering|money launder\\w*|OFAC|FinCEN|Vitalik|Ethereum Foundation|geth|Uniswap|Aave|Lido|MakerDAO|Hyperliquid|perps?|liquidat\\w+|whale)\\b';
 
 const RSS_FEEDS = [
   { name: 'rss:cointelegraph', url: 'https://cointelegraph.com/rss', domain: 'cointelegraph.com' },
@@ -105,6 +106,31 @@ const YT_CHANNELS = [
   { slug: 'unchained', name: 'Unchained', channelId: 'UCWiiMnsnw5Isc2PP1to9nNw', verified: false },
 ];
 
+// Curated Bluesky accounts (2026-09-26, build/bluesky_spec.md). DID is the identity — re-check handles if a URL 404s; filter:false only for accounts that are 100 % crypto.
+const BSKY_ACCOUNTS = [
+  { slug: 'caspiancey',  handle: 'cascoinfoundation.org',                    did: 'did:plc:gujnzolp2n4upahg3zb6u6zx', name: 'Cas Piancey' },
+  { slug: 'bft',         handle: 'bft.wtf',                                  did: 'did:plc:qyqbfjkwwohghps2bbknj4ni', name: 'Bennett Tomlin' },
+  { slug: 'mollywhite',  handle: 'molly.wiki',                               did: 'did:plc:exrxvyu6bpoym6mbnctke5tn', name: 'Molly White' },
+  { slug: 'w3igg',       handle: 'web3isgoinggreat.com',                     did: 'did:plc:ugyl6syayvsrvu5w4uxtlkz4', name: 'Web3 Is Going Just Great', filter: false },
+  { slug: 'davidgerard', handle: 'davidgerard.circumstances.run.ap.brid.gy', did: 'did:plc:g4zvqebem5mso7y2osno5o43', name: 'David Gerard' },
+  { slug: 'csfrayer',    handle: 'csfrayer.bsky.social',                     did: 'did:plc:yjcrm7o57q2hk7lixizk5tb7', name: 'Corey Frayer' },
+  { slug: 'hilaryallen', handle: 'profhilaryallen.bsky.social',              did: 'did:plc:4bcrv573bktwj6xw5tie2im5', name: 'Hilary Allen' },
+  { slug: 'silverman',   handle: 'jacobsilverman.com',                       did: 'did:plc:ijngmewyhu76j3aetbulfov7', name: 'Jacob Silverman' },
+  { slug: 'zekefaux',    handle: 'zekefaux.bsky.social',                     did: 'did:plc:om5px6rmhsd2mkqul2hjzsw5', name: 'Zeke Faux' },
+  { slug: 'benmckenzie', handle: 'benmckenzie.bsky.social',                  did: 'did:plc:eqkd2r3hrbgotsawtwqztnre', name: 'Ben McKenzie' },
+  { slug: 'dzmorris',    handle: 'davidzmorris.bsky.social',                 did: 'did:plc:lkmrmadl4fpy2s72emscmxgr', name: 'David Z. Morris' },
+  { slug: 'nikde',       handle: 'nikhileshde.bsky.social',                  did: 'did:plc:yjlivmqh63ohzgklvioiby4w', name: 'Nikhilesh De' },
+  { slug: 'pstafford',   handle: 'staffordphilip.bsky.social',               did: 'did:plc:hnnp3pc5eprmczrv5no5thgg', name: 'Philip Stafford' },
+  { slug: 'moneystuff',  handle: 'matt-levine.bsky.social',                  did: 'did:plc:hthhtetujklon2c7r65cmvrq', name: 'Money Stuff' },
+  { slug: 'vitalik',     handle: 'vitalik.ca',                               did: 'did:plc:qmajrxvehl6ss6w2h4uuv5bg', name: 'Vitalik Buterin' },
+  { slug: 'karalabe',    handle: 'karalabe.bsky.social',                     did: 'did:plc:if2tug5buc5a3crz2d2i24i3', name: 'Péter Szilágyi' },
+  { slug: 'edmundedgar', handle: 'goat.navy',                                did: 'did:plc:pyzlzqt6b2nyrha7smfry6rv', name: 'Edmund Edgar' },
+  { slug: 'web3privacy', handle: 'web3privacy.info',                         did: 'did:plc:3sfk2lroe4a5lm6yr3qxzd3s', name: 'Web3Privacy Now' },
+  { slug: 'zfnd',        handle: 'zfnd.org',                                 did: 'did:plc:z7q7hx2lk3s2hpzjcpxfkre4', name: 'Zcash Foundation', filter: false },
+  { slug: 'lukedashjr',  handle: 'lukedashjr.bsky.social',                   did: 'did:plc:lggtzy2odpnrgizsir4gejsw', name: 'Luke Dashjr', filter: false },
+  { slug: 'btcbreakdown',handle: 'btcbreakdown.com',                         did: 'did:plc:xufmktwgylcyqth7yeoihm2l', name: 'Bitcoin Breakdown', filter: false },
+];
+
 // Reddit Social tab. OAuth mode (minScore gate) when REDDIT_CLIENT_ID/SECRET/USERNAME/PASSWORD are set;
 // otherwise ONE keyless multireddit /hot/.rss request every 10 min, keeping the first rssTake posts per sub.
 const REDDIT_SUBS = [
@@ -116,4 +142,4 @@ const REDDIT_SUBS = [
   { sub: 'defi', minScore: 30, rssTake: 5 },
 ];
 
-module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS, YT_CHANNELS, REDDIT_SUBS };
+module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, BSKY_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS, YT_CHANNELS, BSKY_ACCOUNTS, REDDIT_SUBS };

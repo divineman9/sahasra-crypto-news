@@ -184,10 +184,12 @@ function makeGithubAdapter(entry) {
     // latest) to match against the /releases/latest tag; only the fallback path applies a tag
     // shape filter ahead of time.
     const candidates = [];
+    const feedTags = new Set();
     for (const it of parsed.items || []) {
       const rawTitle = String(it.title || '').trim();
       const url = String(it.link || '').trim();
       if (!rawTitle || !url) continue;
+      feedTags.add(tagOf(url));
       const publishedAt = parseDate(it);
       if (!publishedAt || publishedAt.getTime() < cutoff) continue;
       candidates.push({ tag: tagOf(url), rawTitle, url, publishedAt });
@@ -215,6 +217,7 @@ function makeGithubAdapter(entry) {
     if (latestTag !== null) {
       let match = candidates.find((c) => c.tag === latestTag);
       if (!match) {
+        if (feedTags.has(latestTag)) return []; // the latest release is in the feed, just older than 7 days — nothing to fetch
         const rel = await fetchApiLatestRelease(entry.url);
         if (!rel || rel.tag_name !== latestTag || rel.prerelease || rel.draft) return [];
         const publishedAt = new Date(rel.published_at);

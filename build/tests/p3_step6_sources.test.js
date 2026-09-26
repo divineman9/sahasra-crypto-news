@@ -361,6 +361,20 @@ function fillDates(text, subs) {
   eq('API release older than 7 days -> no items', await freshOfficial().make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0].run(), []);
   http.request = mkApi({ tag_name: 'v9.9.9-rc1', name: 'Bitcoin Core 9.9.9 rc1', html_url: 'https://github.com/bitcoin/bitcoin/releases/tag/v9.9.9-rc1', published_at: recentIso, prerelease: true, draft: false });
   eq('API release that is a prerelease -> no items', await freshOfficial().make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0].run(), []);
+  console.log('  · latest tag IS in the atom feed but older than 7 days -> [] and NO api.github.com request (Fable B1)');
+  {
+    const oldAtom = ghNoiseAtom.replace(/<\/feed>/, '<entry><id>tag:github.com,2008:Repository/1/v1.50.0</id><updated>' + new Date(Date.now() - 20 * 86400e3).toISOString() + '</updated><link rel="alternate" type="text/html" href="https://github.com/bitcoin/bitcoin/releases/tag/v1.50.0"/><title>Bitcoin Core 1.50.0</title></entry></feed>');
+    const seen = [];
+    http.request = async (url) => {
+      seen.push(url);
+      if (url === ghNoiseUrl) return { status: 200, text: oldAtom, notModified: false, headers: {}, json: () => ({}) };
+      if (url === ghLatestUrl) return { status: 302, text: '', headers: { get: (h) => (h.toLowerCase() === 'location' ? 'https://github.com/bitcoin/bitcoin/releases/tag/v1.50.0' : null) }, json: () => ({}) };
+      return { status: 200, text: '{}', headers: {}, json: () => ({}) };
+    };
+    const got = await freshOfficial().make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0].run();
+    eq('old-but-in-feed latest release -> no items', got, []);
+    eq('... and api.github.com was NOT called', seen.filter((u) => /api\.github\.com/.test(u)).length, 0);
+  }
   http.request = mkApi({ tag_name: 'v1.0.0', name: 'Other', html_url: 'https://github.com/bitcoin/bitcoin/releases/tag/v1.0.0', published_at: recentIso, prerelease: false, draft: false });
   eq('API tag differs from the /latest tag -> no items (never guess)', await freshOfficial().make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0].run(), []);
   http.request = realReq;
