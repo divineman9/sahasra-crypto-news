@@ -3,13 +3,13 @@
 // Phase 3 step 7 (updated): Reddit adapter, two modes sharing one rate budget:
 //
 // 1. OAuth mode (one adapter per subreddit in config.REDDIT_SUBS, active when all four
-// REDDIT_CLIENT_ID/REDDIT_CLIENT_SECRET/REDDIT_USERNAME/REDDIT_PASSWORD env keys are set) —
-// authenticated via OAuth's "password" grant. One access token is fetched and cached
-// module-wide (`cachedToken`) and shared across every subreddit adapter.
+//    REDDIT_CLIENT_ID/REDDIT_CLIENT_SECRET/REDDIT_USERNAME/REDDIT_PASSWORD env keys are set) —
+//    authenticated via OAuth's "password" grant. One access token is fetched and cached
+//    module-wide (`cachedToken`) and shared across every subreddit adapter.
 //
 // 2. Keyless RSS mode (Reddit no longer issues free "script" API apps): a single adapter
-// 'reddit:multi' requesting https://www.reddit.com/r/<sub1>+<sub2>+.../hot/.rss?limit=100
-// every 10 minutes (RSS_INTERVAL_MS, overridable via REDDIT_RSS_INTERVAL_MS, min 2 min).
+//    'reddit:multi' requesting https://www.reddit.com/r/<sub1>+<sub2>+.../hot/.rss?limit=100
+//    every 10 minutes (RSS_INTERVAL_MS, overridable via REDDIT_RSS_INTERVAL_MS, min 2 min).
 //
 // Both modes share one 60 s minimum gap between any two reddit.com requests (`awaitRedditGap`).
 //
@@ -34,7 +34,7 @@ const REDDIT_MIN_GAP_MS = 60000;
 const DAILY_THREAD_RE = /\b(daily|weekly|monthly)\b.*\b(discussion|thread|megathread)\b|\bmegathread\b|\bgeneral discussion\b/i;
 const AUTOMOD = '/u/AutoModerator';
 const SUB_FROM_LINK_RE = /^https?:\/\/(?:www\.|old\.)?reddit\.com\/r\/([^/]+)\//i;
-const DEFAULT_RSS_UA = 'SahasraNews/1.0 (self-hosted RSS reader)';
+const DEFAULT_RSS_UA = 'web:sahasra-news:v1.0 (self-hosted RSS reader)';
 
 function env() {
   return {

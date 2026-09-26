@@ -337,7 +337,32 @@ function fillDates(text, subs) {
   delete require.cache[require.resolve(APP + '/ingest/adapters/official.js')];
   const officialMismatch = require(APP + '/ingest/adapters/official.js');
   const adMismatch = officialMismatch.make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0];
-  eq('mismatched /latest tag -> no items', await adMismatch.run(), []);
+  eq('mismatched /latest tag and the API lookup fails -> no items (never guess)', await adMismatch.run(), []);
+
+  console.log('  · /releases/latest tag missing from the atom feed (CI/RC tags crowd it out) -> ask the GitHub API for that release');
+  const apiUrl = 'https://api.github.com/repos/bitcoin/bitcoin/releases/latest';
+  const apiCalls = [];
+  const mkApi = (body) => async (url) => {
+    if (url === ghNoiseUrl) return { status: 200, text: ghNoiseAtom, notModified: false, headers: {}, json: () => ({}) };
+    if (url === ghLatestUrl) return { status: 302, text: '', headers: { get: (h) => (h.toLowerCase() === 'location' ? 'https://github.com/bitcoin/bitcoin/releases/tag/v9.9.9' : null) }, json: () => ({}) };
+    if (url === apiUrl) { apiCalls.push(url); return { status: 200, text: JSON.stringify(body), headers: {}, json: () => body }; }
+    return { status: 200, text: '', headers: {}, json: () => ({}) };
+  };
+  const recentIso = new Date(Date.now() - 2 * 86400e3).toISOString();
+  http.request = mkApi({ tag_name: 'v9.9.9', name: 'Bitcoin Core 9.9.9', html_url: 'https://github.com/bitcoin/bitcoin/releases/tag/v9.9.9', published_at: recentIso, prerelease: false, draft: false });
+  delete require.cache[require.resolve(APP + '/ingest/adapters/official.js')];
+  const officialApi = require(APP + '/ingest/adapters/official.js');
+  const apiItems = await officialApi.make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0].run();
+  eq('API fallback: exactly one item', apiItems.length, 1);
+  eq('API fallback: title/url/publishedAt/hint from the API release', apiItems[0] && [apiItems[0].title, apiItems[0].url, apiItems[0].publishedAt.toISOString(), apiItems[0].hintTickers[0], apiItems[0].kind], ['Bitcoin Core 9.9.9', 'https://github.com/bitcoin/bitcoin/releases/tag/v9.9.9', recentIso, 'BTC', 'official']);
+  eq('API called once for the one repo', apiCalls.length, 1);
+  const freshOfficial = () => { delete require.cache[require.resolve(APP + '/ingest/adapters/official.js')]; return require(APP + '/ingest/adapters/official.js'); };
+  http.request = mkApi({ tag_name: 'v9.9.9', name: 'Bitcoin Core 9.9.9', html_url: 'https://github.com/bitcoin/bitcoin/releases/tag/v9.9.9', published_at: new Date(Date.now() - 20 * 86400e3).toISOString(), prerelease: false, draft: false });
+  eq('API release older than 7 days -> no items', await freshOfficial().make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0].run(), []);
+  http.request = mkApi({ tag_name: 'v9.9.9-rc1', name: 'Bitcoin Core 9.9.9 rc1', html_url: 'https://github.com/bitcoin/bitcoin/releases/tag/v9.9.9-rc1', published_at: recentIso, prerelease: true, draft: false });
+  eq('API release that is a prerelease -> no items', await freshOfficial().make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0].run(), []);
+  http.request = mkApi({ tag_name: 'v1.0.0', name: 'Other', html_url: 'https://github.com/bitcoin/bitcoin/releases/tag/v1.0.0', published_at: recentIso, prerelease: false, draft: false });
+  eq('API tag differs from the /latest tag -> no items (never guess)', await freshOfficial().make({ sources: [{ type: 'github', url: ghNoiseUrl, base: 'BTC', name: 'Bitcoin Core', verified: false }] })[0].run(), []);
   http.request = realReq;
 
   console.log('— Fable follow-up (1): end-to-end — a slash-shaped tag (optimism-style per-component release) matches through the full adapter, not just the pure tagOf() helper');

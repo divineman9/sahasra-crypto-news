@@ -132,6 +132,26 @@ async function fetchLatestReleaseTag(atomUrl) {
   }
 }
 
+// The atom feed only carries the newest ~10 tags; busy repos push the real stable release out of it.
+// Ask the REST API for the latest release (unauthenticated, 60 req/h; only called on a feed miss).
+function githubApiLatestUrl(atomUrl) {
+  const m = /github\.com\/([^/]+)\/([^/]+)\/releases\.atom/.exec(String(atomUrl));
+  return m ? `https://api.github.com/repos/${m[1]}/${m[2]}/releases/latest` : null;
+}
+async function fetchApiLatestRelease(atomUrl) {
+  const url = githubApiLatestUrl(atomUrl);
+  if (!url) return null;
+  try {
+    const res = await request(url, { timeoutMs: 30000, headers: { accept: 'application/vnd.github+json' } });
+    if (res.status !== 200) return null;
+    const j = typeof res.json === 'function' ? res.json() : JSON.parse(res.text);
+    if (!j || !j.tag_name || !j.published_at) return null;
+    return j;
+  } catch (e) {
+    return null;
+  }
+}
+
 function releaseTitle(projectName, rawTitle) {
   const t = String(rawTitle || '').trim();
   if (!projectName) return t;
@@ -193,8 +213,14 @@ function makeGithubAdapter(entry) {
     // (window/pagination edge case), emit nothing rather than guessing.
     const latestTag = await fetchLatestReleaseTag(entry.url);
     if (latestTag !== null) {
-      const match = candidates.find((c) => c.tag === latestTag);
-      if (!match) return [];
+      let match = candidates.find((c) => c.tag === latestTag);
+      if (!match) {
+        const rel = await fetchApiLatestRelease(entry.url);
+        if (!rel || rel.tag_name !== latestTag || rel.prerelease || rel.draft) return [];
+        const publishedAt = new Date(rel.published_at);
+        if (isNaN(publishedAt.getTime()) || publishedAt.getTime() < cutoff) return [];
+        match = { tag: rel.tag_name, rawTitle: String(rel.name || rel.tag_name).trim(), url: String(rel.html_url || '').trim() || (githubLatestUrl(entry.url).replace(/\/latest$/, '/tag/') + rel.tag_name), publishedAt };
+      }
       if (isUnstableRelease(match.tag, match.rawTitle)) return [];
       return [buildItem(match)];
     }
@@ -308,6 +334,7 @@ module.exports = {
   STRICT_TAG_RE,
   isStrictStableTag,
   githubLatestUrl,
+  githubApiLatestUrl,
   fetchLatestReleaseTag,
   GITHUB_MAX_ITEMS,
 };

@@ -105,16 +105,15 @@ const YT_CHANNELS = [
   { slug: 'unchained', name: 'Unchained', channelId: 'UCWiiMnsnw5Isc2PP1to9nNw', verified: false },
 ];
 
-// Phase 3 step 7: Reddit subreddits (app/ingest/adapters/reddit.js), polled via the free OAuth
-// "script" app flow. minScore is the hot-post score gate (a post also qualifies regardless of
-// score when its flair looks like news/breaking — see reddit.js).
+// Reddit Social tab. OAuth mode (minScore gate) when REDDIT_CLIENT_ID/SECRET/USERNAME/PASSWORD are set;
+// otherwise ONE keyless multireddit /hot/.rss request every 10 min, keeping the first rssTake posts per sub.
 const REDDIT_SUBS = [
-  { sub: 'CryptoCurrency', minScore: 150 },
-  { sub: 'CryptoMarkets', minScore: 50 },
-  { sub: 'Bitcoin', minScore: 100 },
-  { sub: 'ethereum', minScore: 50 },
-  { sub: 'solana', minScore: 50 },
-  { sub: 'defi', minScore: 30 },
+  { sub: 'CryptoCurrency', minScore: 150, rssTake: 10 },
+  { sub: 'CryptoMarkets', minScore: 50, rssTake: 8 },
+  { sub: 'Bitcoin', minScore: 100, rssTake: 10 },
+  { sub: 'ethereum', minScore: 50, rssTake: 6 },
+  { sub: 'solana', minScore: 50, rssTake: 6 },
+  { sub: 'defi', minScore: 30, rssTake: 5 },
 ];
 
 module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS, YT_CHANNELS, REDDIT_SUBS };

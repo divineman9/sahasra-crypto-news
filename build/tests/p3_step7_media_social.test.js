@@ -30,9 +30,14 @@ function setRedditEnv(over = {}) {
   process.env.REDDIT_PASSWORD = over.password || 'test-pass-1234';
   if (over.userAgent) process.env.REDDIT_USER_AGENT = over.userAgent;
 }
+// These OAuth-mode tests pre-date the keyless RSS mode (step 7b): keep RSS mode off here and make the shared
+// 60 s reddit.com gap instant so OAuth tests don't wait in real time. RSS mode is covered by p3_step7b_reddit_rss.
+process.env.REDDIT_RSS_ENABLED = '0';
 function freshReddit() {
   delete require.cache[require.resolve(APP + '/ingest/adapters/reddit.js')];
-  return require(APP + '/ingest/adapters/reddit.js');
+  const r = require(APP + '/ingest/adapters/reddit.js');
+  if (r._clock) r._clock.sleep = async () => {};
+  return r;
 }
 function freshYoutube() {
   delete require.cache[require.resolve(APP + '/ingest/adapters/youtube.js')];
@@ -172,7 +177,7 @@ function freshYoutube() {
   eq('no adapters when credentials are incomplete', disabledAdapters1.length, 0);
   eq('...(same on a second make() call)', disabledAdapters2.length, 0);
   eq('exactly one disabled-startup log line', disabledLogs.length, 1);
-  eq('log line matches the exact required wording (env vars + free script-app URL)', disabledLogs[0], '[reddit] disabled — set REDDIT_CLIENT_ID/SECRET/USERNAME/PASSWORD in app/.env (free "script" app at https://www.reddit.com/prefs/apps)');
+  eq('log line matches the exact required wording (RSS off + no keys)', disabledLogs[0], '[reddit] disabled — REDDIT_RSS_ENABLED=0 and no REDDIT_CLIENT_ID/SECRET/USERNAME/PASSWORD keys');
   check('the log line never prints the configured secret values', !disabledLogs[0].includes('leaked-if-buggy-client-id') && !disabledLogs[0].includes('super-secret-password-should-never-print'), disabledLogs[0]);
   clearRedditEnv();
 
