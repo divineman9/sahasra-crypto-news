@@ -3,6 +3,20 @@
 > Sahasra — "the final path to the Oneness". A free, self-hosted CryptoPanic-style crypto news terminal whose main job is
 > **per-coin altcoin news for the ~500 Binance perps watched by the ShivaShakthi base-break dashboard**.
 
+
+## DEPLOYED on Windows — 2026-09-25 11:27 PM ET (26 Sep 03:27 UTC)
+- Merged cloud branch into main (dc9ea4f); all 25 suites PASS on Windows; Fable LIVE check = GO (report `build/p3_live_check.md`).
+- Pre-deploy patch from the live check: removed dead `blog:kraken` (403) and dead TG `PeckShieldAlert`/`CertiKAlert`; fixed `yt:theblock` channelId → `UCqjFueYMJ78eF6G0lGLzzpQ`; all YouTube `verified:false` for day one (YouTube RSS ~79% success from this IP — otherwise it marks news health degraded); official.js timeouts 30 s (ENS forum is slow) + `DRC|delist(ing)?` in GOVERNANCE_RE. `.env`: `GNEWS_TIERS="A,B"`.
+- Live after restart: 108 adapters, news_live.json health.ok=true (tier-1 12/12, stale none), UI 4180 up (/coin/BTC, /api/search OK). **Coverage 42/50 setup coins (84%)** (was 8/48 at 11:54 AM).
+- NOTE: the collector had been DOWN ~2:20 PM–11:25 PM ET (stopped at cloud handoff; no Startup entry). Ask the user about a Startup-folder shortcut for `app/start-news-hidden.vbs`.
+
+## NEXT (in order)
+1. **All-caps tagger fix** (tickers.js): ALL-CAPS wire headlines produce false tickers (HIGH, NEAR, CASH, FLOW, BOND, ORDER, BEAT, BANK, BAN). Rule: when a title is ≥90% uppercase, skip the bare-uppercase-symbol pass (keep $SYM / SYMUSDT / pairs / aliases). MUST land before setting DISCORD_NEWS_WEBHOOK.
+2. Official GitHub: SUI / AVAX / OP releases never appear (CI/RC tags crowd the atom feed) → switch to api.github.com releases/latest or drop.
+3. After 24 h clean: flip `verified:true` on working TG/GitHub/forum sources (and YouTube if its success rate improves); consider `GNEWS_TIERS="A,B,C"` if no Google 429s.
+4. 24 h soak (`node build/tests/soak_check.js`), Astra batched review (`build/astra_pending_review.md`), Opus ship-gate, Discord webhook (needs user).
+- Postgres session tz is Asia/Calcutta and firstSeenAt is naive UTC: in SQL use `(now() at time zone 'utc') - interval ...`.
+
 ## How it runs
 - **Collector (always on):** `app/supervisor.js`, launched hidden by `app/start-news-hidden.vbs`. Services: `ingest` (all sources) + `signals` (frozen signal-time snapshots). Stop: create `app/logs/STOP`. Logs: `app/logs/*.log`, status `app/logs/status.json`.
 - **Web UI:** `cd app && npm run build && node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 4180` (or `supervisor.js --with-ui`, which also starts WSL Redis + WS server). Default mode runs with `NEWS_REDIS=off` (in-memory stand-in).

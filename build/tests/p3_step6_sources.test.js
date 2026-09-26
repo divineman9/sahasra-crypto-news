@@ -35,16 +35,16 @@ function fillDates(text, subs) {
 
   console.log('— TG_CHANNELS config sanity (incl. F1: unverified by default)');
   const { TG_CHANNELS, CRYPTO_FILTER, MACRO_FILTER } = require(APP + '/ingest/config.js');
-  eq('7 wire channels configured', TG_CHANNELS.length, 7);
+  eq('5 wire channels configured (PeckShield/CertiK removed: dead since 2021-22, Fable live check)', TG_CHANNELS.length, 5);
   const tgNames = TG_CHANNELS.map((c) => 'tg:' + c.channel.toLowerCase());
   eq('adapter names unique', new Set(tgNames).size, tgNames.length);
   const byChan = Object.fromEntries(TG_CHANNELS.map((c) => [c.channel, c]));
   check('F2: TreeNewsFeed/WatcherGuru/wublockchainenglish/Walter_Bloomberg: tier 2, 120s (raised from 60s so t.me total drops from 7.5 to 5.5 req/min)', ['TreeNewsFeed', 'WatcherGuru', 'wublockchainenglish', 'Walter_Bloomberg'].every((c) => byChan[c] && byChan[c].tier === 2 && byChan[c].intervalMs === 120000));
-  check('PeckShieldAlert/CertiKAlert: tier 3, 120s', ['PeckShieldAlert', 'CertiKAlert'].every((c) => byChan[c] && byChan[c].tier === 3 && byChan[c].intervalMs === 120000));
+  check('dead PeckShieldAlert/CertiKAlert are not configured', !byChan.PeckShieldAlert && !byChan.CertiKAlert);
   check('whale_alert_io: tier 4, 120s, alertable false, maxImportance 10', byChan.whale_alert_io && byChan.whale_alert_io.tier === 4 && byChan.whale_alert_io.intervalMs === 120000 && byChan.whale_alert_io.alertable === false && byChan.whale_alert_io.maxImportance === 10);
   check('Walter_Bloomberg has a filter combining CRYPTO_FILTER + macro terms', byChan.Walter_Bloomberg.filter && byChan.Walter_Bloomberg.filter.indexOf(CRYPTO_FILTER) !== -1 && /Fed|FOMC|CPI|Powell|Treasury|tariff/.test(byChan.Walter_Bloomberg.filter));
   check('BWEnews is not in TG_CHANNELS (kept as its own dedicated adapter)', !TG_CHANNELS.some((c) => /bwenews/i.test(c.channel)));
-  check('F1: all 7 wire channels default to verified:false (unverified)', TG_CHANNELS.every((c) => c.verified === false), TG_CHANNELS.map((c) => [c.channel, c.verified]));
+  check('F1: all wire channels default to verified:false (unverified)', TG_CHANNELS.every((c) => c.verified === false), TG_CHANNELS.map((c) => [c.channel, c.verified]));
 
   console.log('— F2: MACRO_FILTER recall (widened terms, still \\b-bounded)');
   const wbRe = new RegExp(CRYPTO_FILTER + '|' + MACRO_FILTER, 'i');
@@ -100,13 +100,9 @@ function fillDates(text, subs) {
   const wh = await by['tg:whale_alert_io'].run();
   check('whale_alert_io: alertable:false, maxImportance:10, tier 4', wh.length === 1 && wh[0].alertable === false && wh[0].maxImportance === 10 && wh[0].sourceTier === 4, wh);
 
-  check('PeckShieldAlert/CertiKAlert adapters at tier 3 / 120s', by['tg:peckshieldalert'].tier === 3 && by['tg:peckshieldalert'].intervalMs === 120000 && by['tg:certikalert'].tier === 3 && by['tg:certikalert'].intervalMs === 120000);
-
+  check('no adapters for the removed dead channels', !by['tg:peckshieldalert'] && !by['tg:certikalert']);
   const { classify } = require(APP + '/ingest/classify.js');
-  const pk = await by['tg:peckshieldalert'].run();
-  const ck = await by['tg:certikalert'].run();
-  eq('PeckShieldAlert "hacked and exploited" -> category hack', classify(pk[0], []).category, 'hack');
-  eq('CertiKAlert "drained via reentrancy exploit" -> category hack', classify(ck[0], []).category, 'hack');
+  eq('security-wire style "hacked and exploited" title still classifies as hack', classify({ kind: 'news', title: 'ProtocolX hacked and exploited for $2M', sourceTier: 3, hintCategory: null }, []).category, 'hack');
 
   http.request = async (url) => ({
     status: 200,

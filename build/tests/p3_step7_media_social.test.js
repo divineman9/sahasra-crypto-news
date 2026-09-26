@@ -53,14 +53,14 @@ function freshYoutube() {
   const ytSlugs = YT_CHANNELS.map((c) => c.slug);
   eq('YT_CHANNELS slugs unique', new Set(ytSlugs).size, ytSlugs.length);
   check('every YT_CHANNELS entry has a UC... channelId', YT_CHANNELS.every((c) => /^UC[\w-]{20,}$/.test(c.channelId)), YT_CHANNELS.map((c) => c.channelId));
-  check('all 14 channels default to verified:true (Fable-verified 2026-09-25)', YT_CHANNELS.every((c) => c.verified === true), YT_CHANNELS.map((c) => [c.slug, c.verified]));
+  check('all YouTube channels verified:false for day one (endpoint flaky from this network, Fable live check)', YT_CHANNELS.every((c) => c.verified === false), YT_CHANNELS.map((c) => [c.slug, c.verified]));
   const byChannelId = new Set(YT_CHANNELS.map((c) => c.channelId));
   check('all 14 channel ids unique', byChannelId.size === 14, byChannelId.size);
   const EXPECTED_IDS = {
     coinbureau: 'UCqK_GSMbpiV8spgD3ZGloSw', bankless: 'UCAl9Ld79qaZxp9JzEOwd3aA', thedefiant: 'UCL0J4MLEdLP0-UyLu0hCktg',
     altcoindaily: 'UCbLhGKVY-bJPcawebgtNfbw', investanswers: 'UClgJyzwGs-GyaNxUHcLZrkg', pomp: 'UCevXpeL8cNyAnww-NqJ4m2w',
     coindesk: 'UC7TghOL755nBk7HelHoi9LQ', bitcoinmagazine: 'UCtOV5M-T3GcsJAq8QKaf0lg', realvision: 'UCGXWKlq1Oxr3ddEtmKhAkPg',
-    cryptobanter: 'UCN9Nj4tjXbVTLYWN0EKly_Q', datadash: 'UCCatR7nWbYrkVXdxXb4cGXw', theblock: 'UC5sL8J5z4PLXjpUce0pnhPg',
+    cryptobanter: 'UCN9Nj4tjXbVTLYWN0EKly_Q', datadash: 'UCCatR7nWbYrkVXdxXb4cGXw', theblock: 'UCqjFueYMJ78eF6G0lGLzzpQ',
     paulbarron: 'UC4VPa7EOvObpyCRI4YKRQRw', unchained: 'UCWiiMnsnw5Isc2PP1to9nNw',
   };
   const byYtSlug = Object.fromEntries(YT_CHANNELS.map((c) => [c.slug, c]));
@@ -105,7 +105,7 @@ function freshYoutube() {
   eq('adapter names unique, yt:<slug> shape', new Set(ytNames).size, ytNames.length);
   check('yt:coinbureau adapter present', ytNames.includes('yt:coinbureau'), ytNames);
   const cbAdapter = ytAdapters.find((a) => a.name === 'yt:coinbureau');
-  eq('tier 4, interval 30 min, quietHealth false (verified:true)', [cbAdapter.tier, cbAdapter.intervalMs, cbAdapter.quietHealth], [4, 1800000, false]);
+  eq('tier 4, interval 30 min, quietHealth true (day one: verified:false)', [cbAdapter.tier, cbAdapter.intervalMs, cbAdapter.quietHealth], [4, 1800000, true]);
 
   const cbItems = await cbAdapter.run();
   eq('Shorts + >7d entries dropped -> only the one qualifying video remains', cbItems.length, 1);

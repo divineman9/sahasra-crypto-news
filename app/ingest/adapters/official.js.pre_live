@@ -44,7 +44,7 @@ const TITLE_UNSTABLE_RE = /\b(rc\d*|release candidates?|beta|alpha|pre(view|rele
 // "vote" inside "Devoted", or "grant" inside "Immigrant". The old generic `\[.*\]` (any brackets
 // anywhere) is replaced with `^\[[^\]]+\]` — only a LEADING bracketed tag counts ("[ARFC] ..."),
 // not one appearing later in an otherwise off-topic title ("Introduce yourself [new members]").
-const GOVERNANCE_RE = /\b(proposals?|AIP|ARFC|DRC|delist(ing)?|temp(erature)? check|snapshot|votes?|voting|onchain|upgrades?|treasury|grants?|parameters?|RFC|request for comment)\b|^\[[^\]]+\]/i;
+const GOVERNANCE_RE = /\b(proposals?|AIP|ARFC|temp(erature)? check|snapshot|votes?|voting|onchain|upgrades?|treasury|grants?|parameters?|RFC|request for comment)\b|^\[[^\]]+\]/i;
 
 function loadSources(file = SOURCES_FILE) {
   const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -121,7 +121,7 @@ function githubLatestUrl(atomUrl) {
 // isStrictStableTag() over the atom feed.
 async function fetchLatestReleaseTag(atomUrl) {
   try {
-    const res = await request(githubLatestUrl(atomUrl), { followRedirects: false, timeoutMs: 30000 });
+    const res = await request(githubLatestUrl(atomUrl), { followRedirects: false, timeoutMs: 10000 });
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers && typeof res.headers.get === 'function' ? res.headers.get('location') : null;
       if (loc) return tagOf(loc);
@@ -155,7 +155,7 @@ function makeGithubAdapter(entry) {
   const domain = hostOf(entry.url);
   const parser = new Parser({ timeout: 15000 });
   async function run() {
-    const res = await request(entry.url, { conditional: true, timeoutMs: 30000 });
+    const res = await request(entry.url, { conditional: true });
     if (res.notModified || res.status === 304) return [];
     const parsed = await parser.parseString(res.text);
     const cutoff = Date.now() - SEVEN_D;
@@ -218,7 +218,7 @@ function makeForumAdapter(entry) {
   const domain = hostOf(entry.url);
   const parser = new Parser({ timeout: 15000 });
   async function run() {
-    const res = await request(entry.url, { conditional: true, timeoutMs: 30000 });
+    const res = await request(entry.url, { conditional: true });
     if (res.notModified || res.status === 304) return [];
     const parsed = await parser.parseString(res.text);
     const cutoff = Date.now() - SEVEN_D;
@@ -254,7 +254,7 @@ function makeBlogAdapter(entry) {
   const domain = hostOf(entry.url);
   const parser = new Parser({ timeout: 15000 });
   async function run() {
-    const res = await request(entry.url, { conditional: true, timeoutMs: 30000 });
+    const res = await request(entry.url, { conditional: true });
     if (res.notModified || res.status === 304) return [];
     const parsed = await parser.parseString(res.text);
     const cutoff = Date.now() - SEVEN_D;
