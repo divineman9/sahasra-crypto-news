@@ -29,3 +29,4 @@ User rule (2026-09-25): while ChatGPT/Astra is unavailable, Fable's approval is 
 - Code written by Sonnet (cloud; GLM unreachable), each step Fable APPROVED after 0-2 fix rounds, plus a final whole-project Fable review with a live collector boot (1 blocker + 8 follow-ups fixed, re-approved).
 - Tests: 30 suites; all pass in cloud except supervisor (Windows-only) and details (binance.com blocked).
 - NOT YET DEPLOYED. Astra review owed for all of it.
+- 2026-09-26: All-caps tagger fix (isAllCapsTitle + relay labels + unambiguous allow-list) Fable APPROVED; DEPLOYED 04:01 UTC. Astra review owed.

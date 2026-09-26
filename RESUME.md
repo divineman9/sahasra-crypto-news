@@ -8,10 +8,10 @@
 - Merged cloud branch into main (dc9ea4f); all 25 suites PASS on Windows; Fable LIVE check = GO (report `build/p3_live_check.md`).
 - Pre-deploy patch from the live check: removed dead `blog:kraken` (403) and dead TG `PeckShieldAlert`/`CertiKAlert`; fixed `yt:theblock` channelId → `UCqjFueYMJ78eF6G0lGLzzpQ`; all YouTube `verified:false` for day one (YouTube RSS ~79% success from this IP — otherwise it marks news health degraded); official.js timeouts 30 s (ENS forum is slow) + `DRC|delist(ing)?` in GOVERNANCE_RE. `.env`: `GNEWS_TIERS="A,B"`.
 - Live after restart: 108 adapters, news_live.json health.ok=true (tier-1 12/12, stale none), UI 4180 up (/coin/BTC, /api/search OK). **Coverage 42/50 setup coins (84%)** (was 8/48 at 11:54 AM).
-- NOTE: the collector had been DOWN ~2:20 PM–11:25 PM ET (stopped at cloud handoff; no Startup entry). Ask the user about a Startup-folder shortcut for `app/start-news-hidden.vbs`.
+- Startup-folder shortcut "Sahasra News Collector.lnk" added 2026-09-26 (runs start-news-hidden.vbs at login). The web UI (port 4180) is NOT auto-started.
 
 ## NEXT (in order)
-1. **All-caps tagger fix** (tickers.js): ALL-CAPS wire headlines produce false tickers (HIGH, NEAR, CASH, FLOW, BOND, ORDER, BEAT, BANK, BAN). Rule: when a title is ≥90% uppercase, skip the bare-uppercase-symbol pass (keep $SYM / SYMUSDT / pairs / aliases). MUST land before setting DISCORD_NEWS_WEBHOOK.
+1. ✅ DONE 2026-09-26 00:01 ET — **All-caps tagger fix** (tickers.js `isAllCapsTitle` incl. relay-label stripping for BWEnews "Tree News: …: BBG Tree News:"; bare tokens in all-caps titles only for curated `ambiguous:false` coins). Fable APPROVED (0 new false tags over 2,776 DB titles). Tests `build/tests/p3_allcaps.test.js` 30/30. **Tagger is now safe for the Discord webhook** (still needs DISCORD_NEWS_WEBHOOK from the user).
 2. Official GitHub: SUI / AVAX / OP releases never appear (CI/RC tags crowd the atom feed) → switch to api.github.com releases/latest or drop.
 3. After 24 h clean: flip `verified:true` on working TG/GitHub/forum sources (and YouTube if its success rate improves); consider `GNEWS_TIERS="A,B,C"` if no Google 429s.
 4. 24 h soak (`node build/tests/soak_check.js`), Astra batched review (`build/astra_pending_review.md`), Opus ship-gate, Discord webhook (needs user).

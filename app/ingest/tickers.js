@@ -80,6 +80,21 @@ function stripPrefix(t) {
   return t;
 }
 
+// A wire-style headline written (almost) entirely in capitals: bare uppercase tokens are not evidence there.
+function isAllCapsTitle(title) {
+  let t = String(title || '').replace(/https?:\/\/\S+/g, ' ');
+  // relay wrappers ("Tree News: *HEADLINE: BBG Tree News:", "AggrNews: HEADLINE AggrNews:") put a mixed-case
+  // source label around a shouting wire headline; strip a label only if it itself has a lowercase letter
+  const lead = /^\s*([A-Za-z][A-Za-z ]{1,24}):\s*/.exec(t);
+  if (lead && /[a-z]/.test(lead[1])) t = t.slice(lead[0].length);
+  const tail = /\s+([A-Za-z][A-Za-z ]{1,24}):\s*$/.exec(t);
+  if (tail && /[a-z]/.test(tail[1])) t = t.slice(0, tail.index);
+  const letters = t.replace(/[^A-Za-z]/g, '');
+  if (letters.length < 12) return false;
+  const upper = letters.replace(/[^A-Z]/g, '').length;
+  return upper / letters.length >= 0.9;
+}
+
 function ok(t) {
   if (!t) return null;
   const s = stripPrefix(t.toUpperCase());
@@ -421,9 +436,16 @@ function tagTickersInner(title, hint, opts = {}) {
   }
 
   // bare uppercase tokens
+  const capsTitle = isAllCapsTitle(title);
+  let capsKeep = null;
+  if (capsTitle) {
+    const CM = require('./coinMatch'); // lazy: avoids a circular require at load time
+    capsKeep = new Set(CM.listBases().filter((b) => CM.getRec(b).ambiguous === false));
+  }
   for (const m of title.matchAll(/\b[A-Z0-9]{2,10}\b/g)) {
     const s = m[0];
     if (!bySymbol.has(s)) continue;
+    if (capsTitle && !capsKeep.has(s)) continue; // all-caps wire headline: ordinary words (NEAR, HIGH, BANK…) are not coins
     const start = m.index;
     const end = start + s.length;
     // skip tokens already handled by the $TICKER and parenthetical rules
@@ -465,6 +487,8 @@ function finalizeCurated(title, hint, opts, out) {
   const hintSet = new Set((hint || []).map((h) => stripPrefix(String(h).toUpperCase())));
   const curated = new Set(CM.listBases());
   const lower = title.toLowerCase();
+  const allCaps = isAllCapsTitle(title);
+  const recFor = (b) => { const r = CM.getRec(b); return allCaps ? Object.assign({}, r, { weak: [] }) : r; };
   const escRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const hardEvidence = (b) => new RegExp('\\$' + escRe(b) + '\\b', 'i').test(title) ||
     new RegExp('(^|[^A-Z0-9])(1000000|1000)?' + escRe(b) + '(USDT|USDC|FDUSD)\\b').test(title);
@@ -490,10 +514,10 @@ function finalizeCurated(title, hint, opts, out) {
   const aliasHit = (b) => (CM.getRec(b).aliases || []).filter((a) => freeOccurrence(a.toLowerCase(), b));
   // FIX1: a standalone UPPERCASE base token (not $X / (X) / pair) is the inner tagger's own evidence; the inner rules
   // (BARE_BLOCK / NEEDS_GATE subject gating) already applied, so trust it.
-  const bareUpper = (b) => new RegExp('(^|[^A-Za-z0-9$(])' + escRe(b) + '([^A-Za-z0-9)]|$)').test(title);
+  const bareUpper = (b) => !allCaps && new RegExp('(^|[^A-Za-z0-9$(])' + escRe(b) + '([^A-Za-z0-9)]|$)').test(title);
 
   // (a) ambiguous curated coins keep a tag only with hard evidence, a hint, or the curated gate's approval
-  let result = out.filter((t) => !curated.has(t) || hintSet.has(t) || !CM.getRec(t).ambiguous || hardEvidence(t) || bareUpper(t) || CM.matchCoin(title, t, CM.getRec(t)));
+  let result = out.filter((t) => !curated.has(t) || hintSet.has(t) || !CM.getRec(t).ambiguous || hardEvidence(t) || bareUpper(t) || CM.matchCoin(title, t, recFor(t)));
 
   // locate the evidence span for base b: longest alias, else $B, else pair, else (B), else first weak word (case-sensitive)
   const evidenceSpan = (b) => {
@@ -504,7 +528,7 @@ function finalizeCurated(title, hint, opts, out) {
     }
     const pats = [new RegExp('\\$' + escRe(b) + '\\b', 'i'), new RegExp('(1000000|1000)?' + escRe(b) + '(USDT|USDC|FDUSD)\\b'), new RegExp('\\(' + escRe(b) + '\\)')];
     for (const re of pats) { const m = re.exec(title); if (m) return [m.index, m.index + m[0].length]; }
-    const rec = CM.getRec(b);
+    const rec = recFor(b);
     const weak = Array.isArray(rec.weak) ? rec.weak : (rec.ambiguous ? [] : [b, rec.name]);
     for (const w of weak) {
       if (!w) continue;
@@ -524,7 +548,7 @@ function finalizeCurated(title, hint, opts, out) {
   const candidates = [];
   for (const b of curated) {
     if (result.includes(b) || isNonCoin(b)) continue;
-    if (!CM.matchCoin(title, b, CM.getRec(b))) continue;
+    if (!CM.matchCoin(title, b, recFor(b))) continue;
     const span = evidenceSpan(b);
     if (!span) continue; // FIX2b: no locatable (un-shadowed) evidence -> do not add
     if (span) {
@@ -548,4 +572,4 @@ function finalizeCurated(title, hint, opts, out) {
   return result;
 }
 
-module.exports = { loadUniverse, addBases, tagTickers, nameOf, _stats, setNonCoinBases, isNonCoin, splitBinanceBases, STOCK_PERP_TITLE_RE, NAME_BLOCK, BARE_BLOCK, NEEDS_GATE, EXCLUDE };
+module.exports = { loadUniverse, addBases, tagTickers, nameOf, _stats, setNonCoinBases, isNonCoin, splitBinanceBases, STOCK_PERP_TITLE_RE, NAME_BLOCK, BARE_BLOCK, NEEDS_GATE, EXCLUDE, isAllCapsTitle };
