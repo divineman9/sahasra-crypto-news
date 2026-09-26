@@ -1,18 +1,32 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LayoutList, Flame, TrendingUp, ArrowUpRight, ArrowDownRight, Building2, X, Plus } from "lucide-react";
+import {
+  LayoutList,
+  Flame,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  Building2,
+  X,
+  Plus,
+  AlertCircle,
+  Bookmark,
+} from "lucide-react";
 import { useFeedStore } from "@/store/useFeedStore";
 import { visibleStories } from "@/lib/filters";
+import { fetchLatest } from "@/lib/feedApi";
 import type { FilterKey } from "@/lib/types";
 
 const FILTERS: { key: FilterKey; label: string; icon: typeof LayoutList }[] = [
   { key: "all", label: "All", icon: LayoutList },
   { key: "hot", label: "Hot", icon: Flame },
   { key: "rising", label: "Rising", icon: TrendingUp },
+  { key: "important", label: "Important", icon: AlertCircle },
   { key: "exchange", label: "Exchange", icon: Building2 },
   { key: "bullish", label: "Bullish", icon: ArrowUpRight },
   { key: "bearish", label: "Bearish", icon: ArrowDownRight },
+  { key: "saved", label: "Saved", icon: Bookmark },
 ];
 
 export function LeftSidebar() {
@@ -22,6 +36,9 @@ export function LeftSidebar() {
   const setFilter = useFeedStore((s) => s.setFilter);
   const addTicker = useFeedStore((s) => s.addTicker);
   const removeTicker = useFeedStore((s) => s.removeTicker);
+  const hideLowGnews = useFeedStore((s) => s.hideLowGnews);
+  const setHideLowGnews = useFeedStore((s) => s.setHideLowGnews);
+  const saved = useFeedStore((s) => s.saved);
   const [input, setInput] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
@@ -30,13 +47,15 @@ export function LeftSidebar() {
     return () => clearInterval(id);
   }, []);
 
+  const savedSet = useMemo(() => new Set(saved), [saved]);
+
   const counts = useMemo(
     () =>
       FILTERS.reduce<Record<string, number>>((acc, f) => {
-        acc[f.key] = visibleStories(posts, f.key, portfolio, now).length;
+        acc[f.key] = visibleStories(posts, f.key, portfolio, now, hideLowGnews, savedSet).length;
         return acc;
       }, {}),
-    [posts, portfolio, now]
+    [posts, portfolio, now, hideLowGnews, savedSet]
   );
 
   const submit = () => {
@@ -69,8 +88,25 @@ export function LeftSidebar() {
       </nav>
 
       <p className="px-2 text-[10px] leading-snug text-slate-500">
-        Hot = importance ≥70 &amp; ≤48h · Rising = ≥2 sources in 60 min · Exchange = exchange / new-market sources
+        Hot = importance ≥70 &amp; ≤48h · Rising = ≥2 sources in 60 min · Important = importance ≥50
+        (any age) · Exchange = exchange / new-market sources · Saved = bookmarked
       </p>
+
+      <label className="flex items-center gap-2 px-2 text-[11px] text-slate-400 select-none">
+        <input
+          type="checkbox"
+          checked={hideLowGnews}
+          onChange={(e) => {
+            // F8 (fix round): hideLowTier4 is now also applied server-side, so a toggle has to
+            // refetch from a clean slate (setHideLowGnews itself resets posts/cursor) rather than
+            // just re-filter what's already in memory.
+            setHideLowGnews(e.target.checked);
+            fetchLatest().catch(() => {});
+          }}
+          className="h-3 w-3 accent-emerald-500"
+        />
+        Hide low-importance (Google News, video, Reddit, whale)
+      </label>
 
       <div className="flex flex-col gap-2">
         <h2 className="text-[10px] uppercase tracking-wider text-slate-500">Portfolio</h2>

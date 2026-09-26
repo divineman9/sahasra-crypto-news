@@ -9,7 +9,7 @@ const NEWS_LIVE_JSON = process.env.NEWS_LIVE_JSON || 'D:\\claude projects\\crypt
 const KEEP_DAYS = 7;
 
 // Regulator feeds are general; keep only crypto-related press releases.
-const CRYPTO_FILTER = '\\b(crypto|bitcoin|ether(eum)?|digital asset|stablecoin|blockchain|tokens?|virtual currenc|defi|mixer|NFT)';
+const CRYPTO_FILTER = '\\b(crypto|bitcoin|ether(eum)?\\b|digital asset|stablecoin|blockchain|tokens?\\b|tokeni[sz]ed\\b|tokeni[sz]ation\\b|virtual currenc|defi\\b|decentrali[sz]ed finance|mixer|NFT)';
 
 const RSS_FEEDS = [
   { name: 'rss:cointelegraph', url: 'https://cointelegraph.com/rss', domain: 'cointelegraph.com' },
@@ -63,4 +63,61 @@ const RSS_FEEDS = [
   { name: 'blog:solana', url: 'https://solana.com/news/rss.xml', domain: 'solana.com', intervalMs: 600000 },
 ];
 
-module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, RSS_FEEDS };
+// Phase 3 step 6: generalized t.me/s/<channel> wire adapters (app/ingest/adapters/telegram.js).
+// Macro terms that move crypto markets even though the headline itself has no crypto word
+// (Walter_Bloomberg mixes crypto with general macro/TradFi headlines). Fix round F2: widened
+// recall (plurals, "federal reserve", "treasur(y|ies)", yields/payrolls/PCE/GDP/inflation/jobless
+// claims) — every term is \b-bounded so it never substring-matches inside an unrelated word
+// (e.g. \bFed\b correctly does not match "FEDEX").
+const MACRO_FILTER = '\\b(Fed|FOMC|CPI|rate (cut|hike)s?|Powell|federal reserve|treasur(y|ies)|SEC|ETF|tariffs?|yields?|payrolls?|PCE|GDP|inflation|jobless claims)\\b';
+// F1: only BWEnews (its own dedicated adapter, unaffected by this list) is a confirmed-live
+// source; the 7 new wire channels are curated but unverified — `verified: false` (the default
+// when omitted) makes their adapter `quietHealth: true` in telegram.js, same treatment as an
+// unverified officialSources.json entry (see official.js / health.js / scheduler.js).
+// F2 (fix round): the 4 tier-2 wires raised from 60s to 120s so t.me's total request rate across
+// all 7 wire channels drops from 7.5 to 5.5 req/min, making tg:bwenews (tier 1, its own dedicated
+// adapter, 30s) less likely to be throttled by t.me alongside them.
+const TG_CHANNELS = [
+  { channel: 'TreeNewsFeed', tier: 2, intervalMs: 120000, verified: false },
+  { channel: 'Walter_Bloomberg', tier: 2, intervalMs: 120000, filter: CRYPTO_FILTER + '|' + MACRO_FILTER, verified: false },
+  { channel: 'WatcherGuru', tier: 2, intervalMs: 120000, verified: false },
+  { channel: 'wublockchainenglish', tier: 2, intervalMs: 120000, verified: false },
+  { channel: 'PeckShieldAlert', tier: 3, intervalMs: 120000, verified: false },
+  { channel: 'CertiKAlert', tier: 3, intervalMs: 120000, verified: false },
+  { channel: 'whale_alert_io', tier: 4, intervalMs: 120000, alertable: false, maxImportance: 10, verified: false },
+];
+
+// Phase 3 step 7: YouTube channel Atom feeds (app/ingest/adapters/youtube.js). All 14 channel
+// IDs were live-verified by Fable on 2026-09-25 (see build/review_fable_cryptopanic_gap.md), so
+// each defaults to `verified: true` (quietHealth: false in youtube.js — normal health alerts
+// apply, unlike the unverified TG_CHANNELS/officialSources.json entries above).
+const YT_CHANNELS = [
+  { slug: 'coinbureau', name: 'Coin Bureau', channelId: 'UCqK_GSMbpiV8spgD3ZGloSw', verified: true },
+  { slug: 'bankless', name: 'Bankless', channelId: 'UCAl9Ld79qaZxp9JzEOwd3aA', verified: true },
+  { slug: 'thedefiant', name: 'The Defiant', channelId: 'UCL0J4MLEdLP0-UyLu0hCktg', verified: true },
+  { slug: 'altcoindaily', name: 'Altcoin Daily', channelId: 'UCbLhGKVY-bJPcawebgtNfbw', verified: true },
+  { slug: 'investanswers', name: 'InvestAnswers', channelId: 'UClgJyzwGs-GyaNxUHcLZrkg', verified: true },
+  { slug: 'pomp', name: 'Pomp', channelId: 'UCevXpeL8cNyAnww-NqJ4m2w', verified: true },
+  { slug: 'coindesk', name: 'CoinDesk', channelId: 'UC7TghOL755nBk7HelHoi9LQ', verified: true },
+  { slug: 'bitcoinmagazine', name: 'Bitcoin Magazine', channelId: 'UCtOV5M-T3GcsJAq8QKaf0lg', verified: true },
+  { slug: 'realvision', name: 'Real Vision', channelId: 'UCGXWKlq1Oxr3ddEtmKhAkPg', verified: true },
+  { slug: 'cryptobanter', name: 'Crypto Banter', channelId: 'UCN9Nj4tjXbVTLYWN0EKly_Q', verified: true },
+  { slug: 'datadash', name: 'DataDash', channelId: 'UCCatR7nWbYrkVXdxXb4cGXw', verified: true },
+  { slug: 'theblock', name: 'The Block', channelId: 'UC5sL8J5z4PLXjpUce0pnhPg', verified: true },
+  { slug: 'paulbarron', name: 'Paul Barron', channelId: 'UC4VPa7EOvObpyCRI4YKRQRw', verified: true },
+  { slug: 'unchained', name: 'Unchained', channelId: 'UCWiiMnsnw5Isc2PP1to9nNw', verified: true },
+];
+
+// Phase 3 step 7: Reddit subreddits (app/ingest/adapters/reddit.js), polled via the free OAuth
+// "script" app flow. minScore is the hot-post score gate (a post also qualifies regardless of
+// score when its flair looks like news/breaking — see reddit.js).
+const REDDIT_SUBS = [
+  { sub: 'CryptoCurrency', minScore: 150 },
+  { sub: 'CryptoMarkets', minScore: 50 },
+  { sub: 'Bitcoin', minScore: 100 },
+  { sub: 'ethereum', minScore: 50 },
+  { sub: 'solana', minScore: 50 },
+  { sub: 'defi', minScore: 30 },
+];
+
+module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS, YT_CHANNELS, REDDIT_SUBS };

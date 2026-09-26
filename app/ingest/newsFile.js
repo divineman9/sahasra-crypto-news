@@ -59,10 +59,15 @@ function buildHealth(scheduler, now) {
   const stale = [];
   for (const a of adapters) {
     if (!a) continue;
-    const windowMs = a.tier === 1 ? 15 * 60000 : 30 * 60000;
+    // Fix round (B1, step 7): same interval-aware window as health.js (a fixed 30-min window
+    // falsely marks any 30-min-or-slower adapter as stale on ~half of jittered cycles), AND
+    // quietHealth (unverified) adapters never raise the dashboard's degraded-coverage banner —
+    // an unverified source going quiet is a log-only concern (see health.js), not something the
+    // person watching news_live.json's health.ok should be paged for.
+    const windowMs = Math.max(a.tier === 1 ? 15 * 60000 : 30 * 60000, (a.intervalMs || 0) * 2);
     const lastOk = a.lastOkAt ? new Date(a.lastOkAt).getTime() : 0;
     const ok = lastOk > now - windowMs && (a.consecutiveErrors || 0) < 3 && (a.consecutiveSaveErrors || 0) < 3;
-    if (!ok) stale.push(a.name);
+    if (!ok && !a.quietHealth) stale.push(a.name);
   }
   return {
     known: true,
@@ -73,23 +78,55 @@ function buildHealth(scheduler, now) {
   };
 }
 
-async function tick(prisma, scheduler) {
+// F1 (fix round): at ~3-4.5k posts/day, a single 48h/take-5000 query silently truncates the older
+// part of the window (tier-1 chips 30-48h old vanish; newsCount48h undercounts; media/social rows
+// eat into the 5000). Split into two queries instead — (a) chips: importance>=50 only, so it can
+// never be crowded out by a flood of low-importance rows; (b) counts/newsLatest: excludes
+// media/social in SQL (kind notIn) with a narrow select, and a much larger take since it has to
+// cover the whole 48h window's ordinary news volume. Both takes are injectable (options or env)
+// so tests can exercise the truncation-avoidance behaviour with small numbers instead of seeding
+// thousands of rows.
+const DEFAULT_CHIPS_TAKE = Number(process.env.NEWSFILE_CHIPS_TAKE || 5000);
+const DEFAULT_COUNTS_TAKE = Number(process.env.NEWSFILE_COUNTS_TAKE || 20000);
+
+async function tick(prisma, scheduler, opts = {}) {
   const now = Date.now();
   const since = new Date(now - 48 * 3600e3);
   const future = new Date(now + 5 * 60e3);
+  const chipsTake = opts.chipsTake || DEFAULT_CHIPS_TAKE;
+  const countsTake = opts.countsTake || DEFAULT_COUNTS_TAKE;
 
-  const posts = await prisma.post.findMany({
-    where: {
-      publishedAt: { gte: since, lte: future },
-      firstSeenAt: { gte: since },
-      OR: [{ userLabel: null }, { userLabel: { not: 'dismiss' } }],
-    },
+  const baseWhere = {
+    publishedAt: { gte: since, lte: future },
+    firstSeenAt: { gte: since },
+    OR: [{ userLabel: null }, { userLabel: { not: 'dismiss' } }],
+  };
+
+  // (a) chip candidates: importance>=50 filtered in SQL, so a flood of low-importance posts can
+  // never crowd a genuine chip out of the take-limited result set.
+  const chipPosts = await prisma.post.findMany({
+    where: { ...baseWhere, importance: { gte: 50 } },
     include: { instruments: true },
     orderBy: { firstSeenAt: 'desc' },
-    take: 5000,
+    take: chipsTake,
   });
 
-  const chipPosts = posts.filter((p) => p.importance >= 50);
+  // (b) counts/newsLatest candidates: every ordinary-news post in the window (no importance
+  // filter — a 📰-chip-worthy hack at importance 20 still counts), media/social excluded in SQL
+  // (redundant with the JS-side kind check below, kept as defense-in-depth against a fake/older
+  // prisma stub in a test not implementing `kind: {notIn}`), narrow select since flags only need
+  // a handful of fields per post.
+  const countPosts = await prisma.post.findMany({
+    where: { ...baseWhere, kind: { notIn: ['media', 'social'] } },
+    select: {
+      id: true, storyId: true, publishedAt: true, importance: true, sourceName: true,
+      title: true, url: true, category: true, sentiment: true, firstSeenAt: true, kind: true,
+      instruments: { select: { ticker: true } },
+    },
+    orderBy: { firstSeenAt: 'desc' },
+    take: countsTake,
+  });
+
   const flags = {};
   for (const p of chipPosts) {
     const item = {
@@ -152,7 +189,13 @@ async function tick(prisma, scheduler) {
   }
 
   const newsByTicker = {};
-  for (const p of posts) {
+  for (const p of countPosts) {
+    // F3 (step 7 fix round): the dashboard's neutral "📰 N" chip (newsCount48h/newsLatest) is
+    // meant for ordinary news coverage — a YouTube video or Reddit thread is not a news story in
+    // that sense (and both are already capped at importance<=10, so they can never become a
+    // risk/catalyst/other chip via chipPosts above). Excluded here only; chipPosts is unaffected.
+    // (Already excluded in SQL above via `kind: {notIn}` — kept here too as defense-in-depth.)
+    if (p.kind === 'media' || p.kind === 'social') continue;
     const item = {
       id: p.id,
       title: p.title,
@@ -205,7 +248,10 @@ async function tick(prisma, scheduler) {
   return out;
 }
 
-function startNewsFile({ prisma, scheduler = null, intervalMs = 5000 }) {
+// F1 (fix round): raised from 5s to 15s — two queries per tick at higher post volume is more DB
+// work than one, and external/news_chip.js's own staleness threshold is 60s (STALE_MS), so 15s
+// still leaves a wide margin (4 missed ticks in a row before the dashboard would call it stale).
+function startNewsFile({ prisma, scheduler = null, intervalMs = 15000, chipsTake, countsTake }) {
   let lastErrLog = 0;
   let running = false;
 
@@ -213,7 +259,7 @@ function startNewsFile({ prisma, scheduler = null, intervalMs = 5000 }) {
     if (running) return;
     running = true;
     try {
-      const out = await tick(prisma, scheduler);
+      const out = await tick(prisma, scheduler, { chipsTake, countsTake });
       out.heartbeat_ms = intervalMs;
       const dir = path.dirname(NEWS_LIVE_JSON);
       if (!fs.existsSync(dir)) return;
@@ -234,4 +280,4 @@ function startNewsFile({ prisma, scheduler = null, intervalMs = 5000 }) {
   return () => clearInterval(timer);
 }
 
-module.exports = { startNewsFile };
+module.exports = { startNewsFile, tick };

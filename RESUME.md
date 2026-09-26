@@ -1,4 +1,4 @@
-# Sahasra — where we stopped (2026-09-25, ~2:40 PM ET — handed off to the GitHub cloud session)
+# Sahasra — where we stopped (2026-09-25, ~2:10 PM ET)
 
 > Sahasra — "the final path to the Oneness". A free, self-hosted CryptoPanic-style crypto news terminal whose main job is
 > **per-coin altcoin news for the ~500 Binance perps watched by the ShivaShakthi base-break dashboard**.
@@ -12,6 +12,7 @@
 
 ## Working rules (user's)
 - Claude orchestrates only; **all code is written by GLM** (`python "D:\claude projects\glm_build.py" --model glm --file <abs> --task "<spec>"`). Send GLM edits **one at a time with ~20 s pauses** (rate limit code 1302 otherwise).
+- **Cloud sessions (claude.ai/code):** GLM is unreachable there, so code is written by a **Sonnet** subagent (Agent model "sonnet"); Fable still reviews. Back on the local clone, switch code-writing back to GLM.
 - Test-first: write/extend `build/tests/*.test.js`, then GLM, then run the suite.
 - **Fable reviews every step** (Agent model "fable"); deploy only after Fable APPROVED. **Astra (ChatGPT) is for batched review passes only** — pending items are listed in `build/astra_pending_review.md`.
 - Deploy = STOP file → wait for node procs to exit → remove STOP → run `start-news-hidden.vbs`.
@@ -25,34 +26,25 @@
   - Date-display bug ✅ feed column = Published time (not collected time); main feed = last 48 h published; Rising/Trending by publishedAt.
   - Step 2 ✅ tagger recall (curated aliases gate, freeOccurrence spans, people/exchange-name rules, BSC excluded) — Fable A/B on 1470 titles: +148 tags ≈95% precision.
 
-## IN PROGRESS — resume here
-**Phase 3 step 3: +43 RSS feeds** (49 total; regulators CFTC/Fed/DOJ/ECB crypto-filtered; blogs Kraken/Chainalysis/Ethereum/Solana).
-- Code DONE by GLM: `app/ingest/config.js` (feeds + `CRYPTO_FILTER`), `app/ingest/adapters/rss.js` (per-feed tier/kind/intervalMs/maxItems/filter/titlePrefix). Backups `*.pre_f3`.
-- Tests: `build/tests/p3_step3_feeds.test.js` 12/12 PASS; already added to `run_all_tests.sh`.
-- Full suite: **ALL SUITES PASS (20 suites)** after step 3 code.
-- Fable review of step 3 was STARTED but stopped mid-way (user moved work to the cloud session) — no verdict yet.
-- **Next actions:**
-  1. Fable review of step 3 (config.js, rss.js vs `.pre_f3`). MOST IMPORTANT question: with 49 feeds, can a slow/failing tier-3 feed make `news_live.json` health `ok:false` (newsFile.js buildHealth / health.js) and thereby hide ALL dashboard chips behind the degraded banner, or cause Discord "source silent" spam? Also: first-run backfill volume + alert safety, [DOJ]/[CFTC] classify → regulatory, story clustering across 40+ publishers.
-  2. Fix anything Fable flags (tests first, GLM one file at a time).
-  3. Deploy (restart collector), run `node build/tests/coverage_probe.js`, update this file, push.
-- Note: the step-3 code is COMMITTED but NOT DEPLOYED — the live collector still runs the 6 original RSS feeds.
+## Phase 3 COMPLETE in cloud session (2026-09-25 evening) — NOT YET DEPLOYED
+Steps 3 (fix), 5, 4B/C, 6, 7, 8 + final whole-project fix round are all written (Sonnet in cloud), Fable-APPROVED and pushed on branch `claude/laughing-cerf-6h5fd6`.
+**Read `build/HANDOFF_phase3.md` first** — deploy steps, what to watch in the first hour/day, rollback, keys needed, open follow-ups.
 
-## Remaining after step 3
-5. `/coin/[ticker]` page + search + source tabs (+ "hide tier-4 importance<30" toggle / Important filter — gnews volume dominates the feed otherwise).
-6. Step 4B/C: gnews for portfolio + top-100 (60 min) and the rest (12 h, batched OR queries).
-7. Telegram wires via generalized t.me/s adapter (TreeNewsFeed, wublockchainenglish, WatcherGuru, whale_alert_io, Walter_Bloomberg, PeckShieldAlert, CertiKAlert) + official blogs/GitHub releases/governance forums via CoinGecko links.
-8. YouTube Media tab (14 verified channel IDs in `build/review_fable_cryptopanic_gap.md`) + Reddit Social tab (**needs user's free Reddit "script" app keys**).
-9. Look parity (favicons, Important/Saved filters, wider headlines, 7-day scroll).
-Then: Step 8 Discord alerts (**needs DISCORD_NEWS_WEBHOOK from user**), Astra batched review of everything in `build/astra_pending_review.md`, 24 h soak, Opus ship-gate.
+### Next actions (local)
+1. `git pull` the branch, `cd app && npm run build`, restart collector (STOP file → wait → remove → start-news-hidden.vbs) and web UI. Recommended day one: `GNEWS_TIERS="A,B"` in app/.env.
+2. First hour: check ingest.log for `tg:bwenews error`, `[gnews]` 429s, `looks dead` (flip `verified:true` on working TG channels / official sources), `[health]`.
+3. Run `node build/tests/coverage_probe.js`; after 24 h `soak_check.js`.
+4. Astra batched review of Phase 3 (listed in `build/astra_pending_review.md`), then Opus ship-gate.
+5. Optional from user: Reddit script-app keys (2FA off account), COINGECKO_DEMO_KEY, DISCORD_NEWS_WEBHOOK.
+
+### Test harness notes
+- `run_all_tests.sh` now needs `cd app && npm run build` first (p3_step5_coin and p3_step8_look start `next start` on port 4190 and refuse a stale `.next`).
+- New suites: p3_step4bc, p3_step6_sources, p3_step7_media_social, p3_step8_look, p3_step5_coin.
 
 ## Known non-blocking follow-ups (from Fable)
+- Phase 3 follow-ups: see "Open follow-ups" in build/HANDOFF_phase3.md.
 - coinMatch CONTEXT_RE lacks long/short/position/leverage/hacked/exploited; aliases ending "Chain/Network" hide chain context (BNB Chain); case-insensitive curated aliases (Pengu game, "World network").
-- gnews state file written every tick; `titleKeys`/`urls` maps never pruned.
-- `newsCount48h` includes importance-10 price-bot items — decide at step 5 whether the 📰 chip counts ≥20 only.
-- newsFile.js 5000-row query every 5 s — revisit interval at higher volume.
+- ~~gnews state file written every tick~~ fixed in 4B/C (write on change, prune >7 d unlisted).
+- `newsCount48h` includes importance-10 price-bot items (media/social now excluded) — still open: count ≥20 only?
+- ~~newsFile.js 5000-row query every 5 s~~ fixed in the final round (chips/counts split, 15 s interval).
 - Uncovered setup coins at last probe: ARK BR BROCCOLI714 MUBARAK ONE SAGA TRUMP WLD XAI XMR XPL 龙虾 (several simply had no news).
-
-## Machine state at handoff
-- Local collector (supervisor → ingest + signals) still running on the dev PC with Phase 3 steps 1, 2, 4A + date fix (started 17:53 UTC).
-- Local Sahasra UI (port 4180) stopped. WSL shut down to free RAM (not needed; NEWS_REDIS=off).
-- Git author for this repo: `Claude <noreply@anthropic.com>`, commits end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`. Push a RESUME.md handoff after every step.

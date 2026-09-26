@@ -14,9 +14,16 @@ function isPostDTO(x: unknown): x is PostDTO {
   );
 }
 
+// F8 (fix round): the server now supports filtering out low-importance tier-4 rows itself
+// (`hideLowTier4=1`) — pass it whenever the store's hideLowGnews toggle is on, so a hidden row
+// never counts against the 7-day scroll's 3000-post in-memory cap in the first place.
+function hideLowTier4Param(): string {
+  return useFeedStore.getState().hideLowGnews ? "&hideLowTier4=1" : "";
+}
+
 export async function fetchLatest(): Promise<void> {
   try {
-    const res = await fetch("/api/posts?limit=50", { cache: "no-store" });
+    const res = await fetch(`/api/posts?limit=50${hideLowTier4Param()}`, { cache: "no-store" });
     if (!res.ok) throw new Error(`fetchLatest failed: ${res.status}`);
     const data: unknown = await res.json();
     const payload = data as { posts?: unknown[]; nextCursor?: string | null } | null;
@@ -39,8 +46,13 @@ export async function fetchOlder(): Promise<void> {
   if (s.loadingOlder || !s.nextCursor) return;
   useFeedStore.getState().setLoadingOlder(true);
   try {
+    // Paging always asks for the 7-day range — the initial fetchLatest() snapshot stays 48h (the
+    // API's own default, for backward compatibility with any other caller), but "load older"
+    // reveals the rest of the week regardless of which 48h-scoped cursor page it started from: the
+    // keyset cursor only encodes "strictly before this row's (firstSeenAt, id)", so switching range
+    // mid-pagination just widens which older rows now qualify, it doesn't skip or duplicate any.
     const res = await fetch(
-      `/api/posts?limit=50&cursor=${encodeURIComponent(s.nextCursor)}`,
+      `/api/posts?limit=50&range=7d&cursor=${encodeURIComponent(s.nextCursor)}${hideLowTier4Param()}`,
       { cache: "no-store" }
     );
     if (res.ok) {
@@ -54,6 +66,10 @@ export async function fetchOlder(): Promise<void> {
       }
       useFeedStore.getState().setNextCursor(payload?.nextCursor ?? null);
     } else if (res.status === 400) {
+      // The cursor row is gone (filtered out or deleted between page loads) — this is not "we
+      // reached the end of the 7-day archive", so NewsFeed shows a distinct "feed changed" message
+      // (F7 fix round) rather than the "end of 7-day archive" marker.
+      useFeedStore.getState().setCursorStale(true);
       useFeedStore.getState().setNextCursor(null);
     } else {
       throw new Error(`fetchOlder failed: ${res.status}`);

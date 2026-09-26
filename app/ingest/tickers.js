@@ -62,7 +62,7 @@ const EXCLUDE = new Set(['USDT', 'USDC', 'FDUSD', 'USD1', 'DAI', 'USDE', 'TUSD',
 const BARE_BLOCK = new Set(['ONE', 'OP', 'IN', 'A', 'ON', 'AI', 'GAS', 'OI', 'US', 'NOW', 'IT', 'BE', 'GO', 'UP', 'ME', 'MY', 'SO', 'OR', 'AT', 'NO', 'ALL', 'NEW', 'FOR', 'THE', 'TOP', 'CAT', 'DOG', 'ID', 'IP', 'OK', 'HOT', 'BIG', 'ACT', 'KEY', 'SUN', 'WIN', 'JOB', 'TRUMP', 'CEO', 'ETF', 'SEC', 'AND', 'ARE', 'HAS', 'WILL', 'CAN', 'NOT', 'BUT', 'OUT', 'ANY', 'ONLY', 'FREE', 'LIVE', 'BACK', 'NEXT', 'OPEN', 'REAL', 'SAFE', 'GENIUS', 'CLARITY', 'BILL', 'FED', 'FOMC', 'CPI', 'GDP', 'IPO', 'USA', 'UK', 'EU', 'ETH2', 'API', 'NFT', 'DEFI', 'RWA', 'DAO', 'TVL', 'ATH', 'CTO', 'CFTC', 'DOJ', 'IRS', 'OCC', 'FDIC', 'JUST', 'BREAKING', 'UPDATE', 'ALERT', 'NEWS', 'WEEK', 'TODAY', 'SPX', 'ARK', 'ALT', 'NFP', 'DXY', 'VIX', 'PCE', 'PMI', 'G7', 'G20', 'TGE', 'ICO', 'KYC', 'AML', 'OFAC', 'UTC', 'VIP', 'AMA', 'ETN', 'ETP', 'OTC', 'SWIFT', 'IMF', 'ECB', 'BOJ', 'PBOC']);
 const NEEDS_GATE = new Set(['DOGE', 'ZK', 'OG', 'IO', 'AI', 'ONE', 'OP', 'GAS', 'SUN', 'MOVE', 'PEOPLE', 'VIRTUAL', 'PROMPT', 'PORTAL', 'BANANA', 'COOKIE', 'COPPER', 'NATGAS', 'AUCTION', 'ARK', 'SPX']);
 const GATED_SUBJECT = new Set(['OP', 'AI', 'ONE', 'GAS', 'SUN', 'ARK', 'SPX']);
-const NAME_BLOCK = new Set(['kucoin', 'gate', 'gate token', 'binance', 'bitget', 'bybit', 'okx', 'kraken', 'coinbase', 'bithumb', 'upbit', 'mexc', 'htx', 'just', 'near', 'story', 'sonic', 'maker', 'origin', 'render', 'echo', 'open', 'safe', 'hyper', 'bitcoin cash sv', 'world', 'pump', 'zero', 'space', 'frax', 'flow', 'mask', 'gas', 'core', 'ethena', 'genius', 'clarity', 'federal', 'reserve', 'treasury', 'senate', 'congress', 'bitcoin etf', 'stable', 'stablecoin', 'token', 'crypto', 'blockchain', 'market', 'bank', 'capital', 'fund', 'trust', 'labs', 'protocol', 'network', 'finance', 'digital', 'global', 'united', 'america', 'liberty', 'freedom', 'justice', 'alpha', 'omega', 'prime', 'pulse', 'magic', 'spark', 'nexus', 'optimism', 'stellar', 'stacks', 'compound', 'immutable', 'mantle', 'status', 'gravity', 'movement', 'threshold', 'portal', 'harmony', 'polygon labs', 'theta', 'render', 'arweave', 'oasis', 'kava', 'celo', 'flare', 'sonic', 'story', 'berachain', 'monad', 'plasma', 'sei', 'midnight', 'lighter', 'jupiter', 'stable', 'derive', 'backpack', 'olympus', 'bedrock', 'vision', 'shuffle', 'ultima', 'sentient', 'seeker', 'humanity', 'chutes', 'helium', 'arkham', 'walrus', 'pharos', 'stronghold', 'espresso', 'comedian', 'babylon', 'cortex', 'aurora', 'lombard', 'centrifuge', 'ontology', 'affine', 'canton', 'tether', 'gnosis', 'wormhole', 'securitize', 'succinct', 'treehouse']);
+const NAME_BLOCK = new Set(['kucoin', 'gate', 'gate token', 'binance', 'bitget', 'bybit', 'okx', 'kraken', 'coinbase', 'bithumb', 'upbit', 'mexc', 'htx', 'just', 'near', 'story', 'sonic', 'maker', 'origin', 'render', 'echo', 'open', 'safe', 'hyper', 'bitcoin cash sv', 'world', 'pump', 'zero', 'space', 'frax', 'flow', 'mask', 'gas', 'core', 'ethena', 'genius', 'clarity', 'federal', 'reserve', 'treasury', 'senate', 'congress', 'bitcoin etf', 'stable', 'stablecoin', 'token', 'crypto', 'blockchain', 'market', 'bank', 'capital', 'fund', 'trust', 'labs', 'protocol', 'network', 'finance', 'digital', 'global', 'united', 'america', 'liberty', 'freedom', 'justice', 'alpha', 'omega', 'prime', 'pulse', 'magic', 'spark', 'nexus', 'optimism', 'stellar', 'stacks', 'compound', 'immutable', 'mantle', 'status', 'gravity', 'movement', 'threshold', 'portal', 'harmony', 'polygon labs', 'theta', 'render', 'arweave', 'oasis', 'kava', 'celo', 'flare', 'sonic', 'story', 'berachain', 'monad', 'plasma', 'sei', 'midnight', 'lighter', 'jupiter', 'stable', 'derive', 'backpack', 'olympus', 'bedrock', 'vision', 'shuffle', 'ultima', 'sentient', 'seeker', 'humanity', 'chutes', 'helium', 'arkham', 'walrus', 'pharos', 'stronghold', 'espresso', 'comedian', 'babylon', 'cortex', 'aurora', 'lombard', 'centrifuge', 'ontology', 'affine', 'canton', 'tether', 'gnosis', 'wormhole', 'securitize', 'succinct', 'treehouse', 'rain', 'sky', 'grass', 'beam', 'cap', 'purr', 'turbo', 'blur', 'sushi', 'orca', 'kite', 'diem', 'velo', 'prom', 'fluid', 'dog', 'coco', 'swop']);
 
 const EXCHANGE_NAME_TOKENS = new Set(['kucoin', 'kucoin token', 'binance', 'binance coin', 'okx', 'bitget', 'gate', 'gate token', 'gate.io', 'crypto.com', 'htx', 'huobi', 'mexc', 'bybit']);
 const EXCH_EVENT_AFTER = /^('s|’s)?\s+((exchange|platform|wallet|futures)\s+)?(hacked|exploited|drained|breach(ed)?|attacked|compromised|outage|insolven\w*|bankrupt\w*|token|coin|price)\b/i;
@@ -449,9 +449,18 @@ function tagTickersInner(title, hint, opts = {}) {
   return out;
 }
 
+// F3 (fix round): media/social/official posts get the same curated-alias recall/ambiguity gate as
+// news — the gate used to bail out for any kind other than news/undefined/null, so e.g. a Reddit
+// thread ("r/CryptoCurrency: Ethena governance vote passes", kind social) or a YouTube video title
+// ("Is Sui the next Solana?", kind media) never got curated aliases like "Ethena"/"Sui" resolved
+// to ENA/SUI at all. Hint tickers (raw.hintTickers) always survived anyway — hintSet below is
+// built straight from `hint`, independent of opts.kind — this only widens which kinds get the
+// curated finalizer's OWN alias/evidence matching.
+const CURATED_FINALIZE_KINDS = new Set(['news', 'media', 'social', 'official', undefined, null]);
+
 function finalizeCurated(title, hint, opts, out) {
   if (opts.kind === 'exchange' || opts.kind === 'symbol') return out;
-  if (!(opts.kind === 'news' || opts.kind === undefined || opts.kind === null)) return out;
+  if (!CURATED_FINALIZE_KINDS.has(opts.kind)) return out;
   const CM = require('./coinMatch'); // lazy: avoids a circular require at load time
   const hintSet = new Set((hint || []).map((h) => stripPrefix(String(h).toUpperCase())));
   const curated = new Set(CM.listBases());
@@ -539,4 +548,4 @@ function finalizeCurated(title, hint, opts, out) {
   return result;
 }
 
-module.exports = { loadUniverse, addBases, tagTickers, nameOf, _stats, setNonCoinBases, isNonCoin, splitBinanceBases, STOCK_PERP_TITLE_RE };
+module.exports = { loadUniverse, addBases, tagTickers, nameOf, _stats, setNonCoinBases, isNonCoin, splitBinanceBases, STOCK_PERP_TITLE_RE, NAME_BLOCK, BARE_BLOCK, NEEDS_GATE, EXCLUDE };

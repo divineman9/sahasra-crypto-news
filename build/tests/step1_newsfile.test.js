@@ -23,7 +23,13 @@ const prisma = { post: { findMany: async (q) => {
 const scheduler = { health: () => [
   { name: 'bybit', tier: 1, lastOkAt: now - 1000, consecutiveErrors: 0 },
   { name: 'kucoin', tier: 1, lastOkAt: now - 20 * 60e3, consecutiveErrors: 0 },
-  { name: 'rss:x', tier: 3, lastOkAt: now - 5 * 60e3, consecutiveErrors: 0 } ] };
+  { name: 'rss:x', tier: 3, lastOkAt: now - 5 * 60e3, consecutiveErrors: 0 },
+  // B1 (step 7 fix round): buildHealth's window must be interval-aware (>= 2x intervalMs), and a
+  // quietHealth (unverified) adapter must never raise the dashboard's stale/degraded banner.
+  { name: 'yt:x', tier: 4, intervalMs: 1800000, lastOkAt: now - 35 * 60e3, consecutiveErrors: 0 }, // 35m < 2x30m=60m -> ok
+  { name: 'yt:y', tier: 4, intervalMs: 1800000, lastOkAt: now - 65 * 60e3, consecutiveErrors: 0 }, // 65m > 60m -> stale
+  { name: 'gh:quiet', tier: 3, intervalMs: 1800000, quietHealth: true, lastOkAt: now - 5 * 3600e3, consecutiveErrors: 0 }, // 5h silent, but quietHealth -> never in `stale`
+  { name: 'rss:fast', tier: 3, intervalMs: 90000, lastOkAt: now - 31 * 60e3, consecutiveErrors: 0 } ] }; // 31m > 30m floor -> stale (unchanged: the 30-min floor still dominates for a fast-interval adapter)
 const stop = startNewsFile({ prisma, scheduler, intervalMs: 200 });
 setTimeout(() => {
   stop && stop();
@@ -42,7 +48,8 @@ setTimeout(() => {
   eq('BBB other = neutral regulatory', b && b.other && b.other.id, 'R1');
   eq('BBB no risk', b && b.risk, null);
   eq('health.ok false (kucoin silent 20m)', j.health && j.health.ok, false);
-  check('health.stale lists kucoin only', j.health && JSON.stringify(j.health.stale) === '["kucoin"]', j.health);
   eq('tier1Ok/Total', j.health && [j.health.tier1Ok, j.health.tier1Total], [1, 2]);
+  const stale = j.health && j.health.stale.slice().sort();
+  eq('B1: health.stale = kucoin + yt:y (65m, past 2x30min interval) + rss:fast (31m, past the 30min floor) — yt:x (35m, within 60min) and gh:quiet (5h but quietHealth) excluded', stale, ['kucoin', 'rss:fast', 'yt:y']);
   done('step1_newsfile');
 }, 900);

@@ -2,6 +2,8 @@
 
 require('dotenv').config();
 
+const fs = require('fs');
+const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 const { createRedis } = require('./ingest/redisOptional');
 const { Scheduler } = require('./ingest/scheduler');
@@ -25,7 +27,36 @@ const bwenews = require('./ingest/adapters/bwenews');
 const upbit = require('./ingest/adapters/upbit');
 const rss = require('./ingest/adapters/rss');
 const gnews = require('./ingest/adapters/gnews');
+const telegram = require('./ingest/adapters/telegram');
+const official = require('./ingest/adapters/official');
+const youtube = require('./ingest/adapters/youtube');
+const reddit = require('./ingest/adapters/reddit');
 const { loadWatchBases } = require('./ingest/watchlist');
+
+const TIER_CACHE_FILE = path.join(__dirname, 'ingest', 'cache', 'gnews_tiers.json');
+
+// gnews tiers B (top-100 Binance USDT-M perps by 24h quote volume) and C (every other coin base)
+// are cached to disk so a restart has them before the first refresh completes.
+function loadTierCache() {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(TIER_CACHE_FILE, 'utf8'));
+    return {
+      B: Array.isArray(parsed.B) ? parsed.B : [],
+      C: Array.isArray(parsed.C) ? parsed.C : [],
+    };
+  } catch (e) {
+    return { B: [], C: [] };
+  }
+}
+function saveTierCache(tierBList, tierCList) {
+  try {
+    fs.mkdirSync(path.dirname(TIER_CACHE_FILE), { recursive: true });
+    fs.writeFileSync(TIER_CACHE_FILE + '.tmp', JSON.stringify({ B: tierBList, C: tierCList, updatedAt: Date.now() }));
+    fs.renameSync(TIER_CACHE_FILE + '.tmp', TIER_CACHE_FILE);
+  } catch (e) {
+    console.error('[ingest] gnews tier cache save error:', e.message || e);
+  }
+}
 
 async function main() {
   const prisma = new PrismaClient();
@@ -88,6 +119,10 @@ async function main() {
     },
   });
 
+  const tierCache = loadTierCache();
+  let tierBList = tierCache.B; // top-100 Binance USDT-M coin perps by 24h quote volume, minus tier A (excluded in gnews.js)
+  let tierCList = tierCache.C; // every other coin base known to the universe, minus tiers A and B (excluded in gnews.js)
+
   const adapters = [
     bybit.make(),
     bitget.make(),
@@ -98,7 +133,14 @@ async function main() {
     upbit.make(),
     ...symbols.make({ prisma }),
     ...rss.make(),
-    gnews.make({ getTierA: () => loadWatchBases() }),
+    gnews.make({ getTierA: () => loadWatchBases(), getTierB: () => tierBList, getTierC: () => tierCList }),
+    ...(process.env.TG_WIRES_ENABLED !== '0' ? telegram.make() : []),
+    ...(process.env.OFFICIAL_ENABLED !== '0' ? official.make() : []),
+    ...(process.env.YOUTUBE_ENABLED !== '0' ? youtube.make() : []),
+    // reddit.make() itself is a no-op (and logs one disabled-startup line) when
+    // REDDIT_CLIENT_ID/SECRET/USERNAME/PASSWORD aren't all set — REDDIT_ENABLED only gates
+    // whether we even try.
+    ...(process.env.REDDIT_ENABLED !== '0' ? reddit.make() : []),
   ];
 
   let futuresFirstRun = true;
@@ -109,6 +151,8 @@ async function main() {
       if (coinBases.length < 100) throw new Error('exchangeInfo looks incomplete (' + coinBases.length + ' coin bases)');
       if (coinBases.length) addBases(coinBases);
       setNonCoinBases(nonCoinBases);
+      tierCList = coinBases;
+      saveTierCache(tierBList, tierCList);
       if (futuresFirstRun) {
         futuresFirstRun = false;
         console.log(`[ingest] bases: ${coinBases.length} coin, ${nonCoinBases.length} non-coin (stocks/commodities/indexes)`);
@@ -128,6 +172,20 @@ async function main() {
   const basesTimer = setInterval(() => {
     if (!futuresFirstRun) refreshBases();
   }, 10 * 60000);
+
+  const refreshTierB = async () => {
+    try {
+      const res = await http.request('https://fapi.binance.com/fapi/v1/ticker/24hr', { timeoutMs: 15000 });
+      const list = gnews.deriveTierB(res.json(), { n: 100 });
+      if (!list.length) throw new Error('empty tier-B list');
+      tierBList = list;
+      saveTierCache(tierBList, tierCList);
+    } catch (e) {
+      console.error('[ingest] gnews tier-B refresh error (keeping previous list):', e.message || e);
+    }
+  };
+  const tierBTimer = setInterval(refreshTierB, 60 * 60000);
+  setTimeout(() => { refreshTierB(); }, 20000);
   const futuresHook = setInterval(() => {
     if (!futuresFirstRun && symbols.binanceFuturesBases().length) {
       clearInterval(futuresHook);
@@ -151,6 +209,7 @@ async function main() {
     try {
       scheduler.stop();
       clearInterval(basesTimer);
+      clearInterval(tierBTimer);
       clearInterval(futuresHook);
       clearInterval(universeTimer);
       if (typeof stopNewsFile === 'function') stopNewsFile();

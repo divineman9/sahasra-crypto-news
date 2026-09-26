@@ -1,6 +1,7 @@
 import {
   Building2,
   Landmark,
+  MessageCircle,
   Newspaper,
   PenLine,
   PlayCircle,
@@ -36,7 +37,10 @@ export function kindIcon(kind: Kind): { Icon: LucideIcon; cls: string; label: st
     case "media":
       return { Icon: PlayCircle, cls: "text-fuchsia-400", label: "MEDIA" };
     case "blog":
-      return { Icon: PenLine, cls: "text-amber-400", label: "BLOG" };
+    case "official":
+      return { Icon: PenLine, cls: "text-amber-400", label: kind === "official" ? "OFFICIAL" : "BLOG" };
+    case "social":
+      return { Icon: MessageCircle, cls: "text-violet-400", label: "SOCIAL" };
     case "news":
     default:
       return { Icon: Newspaper, cls: "text-sky-400", label: "NEWS" };

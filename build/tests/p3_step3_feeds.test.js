@@ -18,6 +18,40 @@ const rss = (items) => `<?xml version="1.0"?><rss version="2.0"><channel><title>
   check('ef blog capped (maxItems ≤ 20)', RSS_FEEDS.some((f) => /ethereum\.org/.test(f.url) && f.maxItems && f.maxItems <= 20));
   check('blogs polled ≤ every 10 min (intervalMs ≥ 600000)', RSS_FEEDS.filter((f) => f.name.startsWith('blog:')).every((f) => f.intervalMs >= 600000));
 
+  console.log('— CRYPTO_FILTER regex (word-boundary bug on short stems)');
+  const cryptoFilterRe = new RegExp(require(APP + '/ingest/config.js').CRYPTO_FILTER, 'i');
+  const mustMatch = [
+    'SEC charges digital asset platform',
+    'New stablecoin rules',
+    'Virtual currency exchange fined',
+    'Tokenized deposits pilot',
+    'Tokenisation of bonds',
+    'Ethereum upgrade',
+    'Ether ETF approved',
+    'DeFi protocol exploited',
+    'Decentralized finance report',
+    'NFT marketplace settles',
+    'Bitcoin mixer operator sentenced',
+    'Crypto firm sanctioned',
+    'Blockchain analytics',
+    'Token sale fraud',
+    'Tokens seized',
+  ];
+  eq('CRYPTO_FILTER matches true crypto titles', mustMatch.filter((t) => cryptoFilterRe.test(t)), mustMatch);
+  const mustNotMatch = [
+    'Government deficit and debt statistics',
+    'Fed defines new reporting standard',
+    'Speech on defined-benefit pension reform',
+    'Definitions of capital',
+    'Report on deficiencies in bank capital',
+    'Defiant tone at hearing',
+    'Bitter winter for banks',
+    'Ethics office report',
+    'Ethereal atmosphere',
+    'Tokenism in hiring',
+  ];
+  eq('CRYPTO_FILTER does not false-positive on non-crypto titles', mustNotMatch.filter((t) => cryptoFilterRe.test(t)), []);
+
   console.log('— adapter honours per-feed options');
   const now = Date.now();
   const bodies = {

@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, ExternalLink, X } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, Plus, Star, X } from "lucide-react";
 import type { PostDTO } from "@/lib/types";
 import { useFeedStore } from "@/store/useFeedStore";
 import { useLabel } from "@/hooks/useLabel";
 import { isSimulated } from "@/lib/simulated";
+import { mediaThumb } from "@/lib/mediaThumb";
 import {
   ageMs,
   fmtAge,
   groupStories,
   isFresh,
+  isSavedStory,
 } from "@/lib/filters";
 import {
   CATEGORY_STYLE,
@@ -29,6 +31,8 @@ function minutesBetween(aIso: string, bIso: string): number {
 export function PostDetail({ post }: { post: PostDTO }) {
   const posts = useFeedStore((s) => s.posts);
   const addTicker = useFeedStore((s) => s.addTicker);
+  const savedList = useFeedStore((s) => s.saved);
+  const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const { setLabel, busy } = useLabel(post);
   const [now, setNow] = useState<number>(() => Date.now());
 
@@ -45,6 +49,14 @@ export function PostDetail({ post }: { post: PostDTO }) {
     .filter((p) => (p.storyId ?? p.id) === storyKey)
     .sort((a, b) => (a.firstSeenAt === b.firstSeenAt ? (a.id < b.id ? -1 : 1) : a.firstSeenAt < b.firstSeenAt ? -1 : 1));
 
+  // F2 fix round: same story-aware save logic as FeedRow's star — "saved" means any clustered
+  // source of this story is bookmarked, not just the exact post this page happens to be showing,
+  // and toggling clears/sets consistently with that (see toggleSavedMembers in storyFilters.js).
+  // Falls back to `[post]` when there are no siblings loaded yet, matching isSavedStory's own
+  // fallback for an empty members list.
+  const storyForSave = { post, members: siblings.length > 0 ? siblings : [post] };
+  const saved = isSavedStory(storyForSave, savedList);
+
   const postTickers = new Set(post.instruments.map((i) => i.ticker));
   const related = groupStories(
     posts.filter((p) => (p.storyId ?? p.id) !== storyKey && p.instruments.some((i) => postTickers.has(i.ticker)))
@@ -58,6 +70,8 @@ export function PostDetail({ post }: { post: PostDTO }) {
     post.announcementSeenAt && post.symbolSeenAt
       ? minutesBetween(post.symbolSeenAt, post.announcementSeenAt)
       : null;
+
+  const thumb = post.kind === "media" ? mediaThumb(post.url) : null;
 
   return (
     <div className="max-w-4xl p-4 text-xs font-mono text-slate-300">
@@ -78,6 +92,19 @@ export function PostDetail({ post }: { post: PostDTO }) {
       </div>
 
       <h1 className="mt-2 text-lg text-slate-100 font-sans font-semibold">{post.title}</h1>
+
+      {thumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumb}
+          alt=""
+          width={320}
+          height={180}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="mt-3 h-auto max-w-xs rounded border border-slate-800"
+        />
+      ) : null}
 
       <div className="mt-2 flex flex-wrap gap-2">
         {cat.label ? (
@@ -102,21 +129,39 @@ export function PostDetail({ post }: { post: PostDTO }) {
       </div>
 
       {post.instruments.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {post.instruments.map((inst) => (
-            <button
-              key={inst.ticker}
-              onClick={() => addTicker(inst.ticker)}
-              title="add to portfolio"
-              className={`border px-1.5 py-0.5 ${SENTIMENT_CHIP[post.sentiment]} hover:brightness-125`}
-            >
-              ${inst.ticker} · {inst.name}
-            </button>
+            <span key={inst.ticker} className="inline-flex items-center gap-1">
+              <Link
+                href={`/coin/${inst.ticker}`}
+                title={`Open ${inst.ticker} coin page`}
+                className={`border px-1.5 py-0.5 ${SENTIMENT_CHIP[post.sentiment]} hover:brightness-125`}
+              >
+                ${inst.ticker} · {inst.name}
+              </Link>
+              <button
+                onClick={() => addTicker(inst.ticker)}
+                title="add to portfolio"
+                className="border border-slate-700 px-1 py-0.5 text-slate-500 hover:text-emerald-400"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </span>
           ))}
         </div>
       ) : null}
 
       <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={() => toggleSaved(storyForSave)}
+          aria-pressed={saved}
+          aria-label={saved ? "Remove from saved" : "Save"}
+          className={`inline-flex items-center gap-1 border px-2 py-0.5 ${
+            saved ? "border-amber-500 text-amber-400" : "border-slate-600 text-slate-400 hover:text-amber-400"
+          }`}
+        >
+          <Star className="h-3 w-3" fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save"}
+        </button>
         <button
           onClick={() => setLabel("catalyst")}
           disabled={busy}
