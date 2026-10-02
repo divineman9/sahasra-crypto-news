@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
@@ -153,6 +153,16 @@ export default function CoinPage() {
       cancelled = true;
     };
   }, [mounted, ticker]);
+
+  // If the last 48h has no stories but the last 7 days do, show 7 days automatically (once per coin),
+  // so opening an older story's coin never shows an empty page.
+  const autoRangeFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!ticker || autoRangeFor.current === ticker) return;
+    if (!headline48h || !headline7d) return;
+    autoRangeFor.current = ticker;
+    if (headline48h.all === 0 && headline7d.all > 0) setRange("7d");
+  }, [ticker, headline48h, headline7d]);
 
   const loadMore = useCallback(() => {
     if (!nextCursor || loadingMore) return;
