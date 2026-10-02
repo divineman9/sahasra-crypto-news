@@ -63,12 +63,15 @@ export function TopBar() {
         <Link
           href="/about/devis"
           className="ten-lenses mt-2"
-          aria-label="Ten lenses: about the ten Dasa Mahavidya inspired symbols"
+          aria-label="Ten lenses and the Guardian: about the symbols"
           data-testid="ten-lenses"
         >
           {DEVI.map((d, i) => (
             <DeviMark key={d.key} devi={d.key} size={30} play replay delay={i * 150} glow named />
           ))}
+          <span className="ten-lenses-sep" aria-hidden="true" />
+          <DeviMark devi="bhairava" size={30} play replay delay={DEVI.length * 150} glow named />
+          <span className="ten-lenses-label" aria-hidden="true">GUARDIAN</span>
         </Link>
       </div>
 

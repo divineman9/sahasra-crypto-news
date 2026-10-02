@@ -80,6 +80,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const legend = await httpGet(`${BASE}/about/devis`);
     eq('legend 200', legend.status, 200);
     eq('lists 10 symbols', (legend.text.match(/data-devi="/g) || []).length, 10);
+    check('legend: separate Guardian card (Bhairava, Warnings & safety, own tooltip), still 10 Devis', /data-guardian="bhairava"/.test(legend.text) && /Warnings &amp; safety|Warnings & safety/.test(legend.text) && /Inspired by Bhairava&#x27;s association with guardianship and time|Inspired by Bhairava's association with guardianship and time/.test(legend.text));
     check('legend has the sensitivity note', /not devotional images, not ritual yantras/.test(legend.text));
     check('legend marks are aria-hidden svgs', (legend.text.match(/aria-hidden="true"/g) || []).length >= 10);
 
@@ -141,10 +142,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       const home = JSON.parse(await probe(`${BASE}/`, false, "JSON.stringify({ side: [...document.querySelectorAll('nav a')].filter((a) => a.getAttribute('href') === '/about/devis').length, head: [...document.querySelectorAll('header a')].filter((a) => a.getAttribute('href') === '/about/devis').length })", 2500) || '{}');
       eq('home: Ten lenses link in the left nav and in the header', [home.side, home.head], [1, 1]);
       const strip = JSON.parse(await probe(`${BASE}/`, false, "(() => { const s = document.querySelector('[data-testid=ten-lenses]'); const h = document.querySelector('header.sahasra-header'); const svgs = s ? [...s.querySelectorAll('svg')] : []; return JSON.stringify({ marks: svgs.length, hidden: svgs.filter((v) => v.getAttribute('aria-hidden') === 'true').length, names: s ? [...s.querySelectorAll('.devi-wrap')].map((w) => (w.title || '')) : [], w: svgs[0] ? Math.round(svgs[0].getBoundingClientRect().width) : 0, href: s ? s.getAttribute('href') : null, playing: svgs.filter((v) => v.classList.contains('is-playing')).length, hdrH: h ? Math.round(h.getBoundingClientRect().height) : 0 }); })()", 4500) || '{}');
-      check('home header: ten Devi marks, aria-hidden, ~30 px, link to /about/devis', strip.marks === 10 && strip.hidden === 10 && strip.w >= 28 && strip.w <= 32 && strip.href === '/about/devis', strip);
+      check('home header: ten Devi marks + Bhairava (11), aria-hidden, ~30 px, link to /about/devis', strip.marks === 11 && strip.hidden === 11 && strip.w >= 28 && strip.w <= 32 && strip.href === '/about/devis', strip);
       check('home header: marks have tooltips and play once on load (staggered)', strip.names.every((n, i) => /Inspired by/.test(n) && /·/.test(n.split('\n')[0])) && strip.playing >= 1, strip);
       const stripRm = JSON.parse(await probe(`${BASE}/`, true, "JSON.stringify({ playing: document.querySelectorAll('[data-testid=ten-lenses] svg.is-playing').length, marks: document.querySelectorAll('[data-testid=ten-lenses] svg').length })", 3000) || '{}');
-      check('home header under reduced motion: 10 marks, none playing', stripRm.marks === 10 && stripRm.playing === 0, stripRm);
+      check('home header under reduced motion: 11 marks, none playing', stripRm.marks === 11 && stripRm.playing === 0, stripRm);
       const a = await pageText(`${BASE}/post/${uPost.id}`);
       check('unlock card rendered on /post/<id>', !!a.res, a.errors);
       if (a.res) {

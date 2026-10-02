@@ -195,6 +195,8 @@ a:hover {
    Original editorial line-art (spec section 2). Colours per Devi, dark neon default; light overrides below.
    Neon stays on borders only; text is crisp. Marks are decorative (aria-hidden); static frame = resolved state. */
 :root {
+  --devi-bhairava: #7f8bd6;
+  --devi-bhairava-2: #ff9f1c;
   --devi-tara: #2f6bff;
   --devi-tara-2: #c9d1e0;
   --devi-kali: #5b6ad0;
@@ -234,6 +236,7 @@ a:hover {
 
 .devi { display: block; overflow: visible; }
 .devi-tara { color: var(--devi-tara); }
+.devi-bhairava { color: var(--devi-bhairava); }
 .devi-kali { color: var(--devi-kali); }
 .devi-bhuvaneshwari { color: var(--devi-bhuvaneshwari); }
 .devi-tripurasundari { color: var(--devi-tripurasundari); }
@@ -482,6 +485,8 @@ a:hover {
 
 /* Light theme overrides come LAST so they beat the dark defaults above (same specificity, later wins). Default stays dark neon. */
 [data-theme="light"] {
+  --devi-bhairava: #3b4580;
+  --devi-bhairava-2: #c76a00;
   --devi-tara: #1d4ed8;
   --devi-tara-2: #8a96ad;
   --devi-kali: #2a3a8c;
@@ -542,3 +547,13 @@ a:hover {
 .ex-preview-tf { color: #9aa6bd; }
 .ex-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 640px) { .ten-lenses { gap: 8px; justify-content: flex-start; } }
+
+/* Bhairava (Guardian): the guarding circle closes around the trident, which settles; the hourglass fades in. 2.6 s, once. */
+.devi.is-playing .devi-bhairava-ring { stroke-dasharray: 1; animation: devi-bhairava-ring 2.6s var(--devi-ease) 1 both; }
+.devi.is-playing .devi-bhairava-trident { animation: devi-bhairava-trident 2.6s var(--devi-ease) 1 both; }
+.devi.is-playing .devi-bhairava-damaru { animation: devi-bhairava-damaru 2.6s var(--devi-ease) 1 both; }
+@keyframes devi-bhairava-ring { 0% { stroke-dashoffset: 1; } 75%, 100% { stroke-dashoffset: 0; } }
+@keyframes devi-bhairava-trident { 0%, 30% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
+@keyframes devi-bhairava-damaru { 0%, 50% { opacity: 0; } 100% { opacity: 1; } }
+.ten-lenses-sep { align-self: stretch; width: 1px; margin: 4px 2px; background: rgba(255, 159, 28, 0.45); }
+.ten-lenses-label { font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: 0.2em; color: #ffb869; line-height: 1; }

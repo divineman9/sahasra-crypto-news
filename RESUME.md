@@ -10,6 +10,9 @@
 - Live after restart: 108 adapters, news_live.json health.ok=true (tier-1 12/12, stale none), UI 4180 up (/coin/BTC, /api/search OK). **Coverage 42/50 setup coins (84%)** (was 8/48 at 11:54 AM).
 - Startup-folder shortcut "Sahasra News Collector.lnk" added 2026-09-26 (runs start-news-hidden.vbs at login). The web UI (port 4180) is NOT auto-started.
 
+## 2026-10-02 - Bhairava (Guardian) mark added (built, NOT restarted)
+- 11th mark `devi/Bhairava.tsx` (trident + damaru hourglass in a guarding circle, indigo/saffron, ring closes + trident settles 2.6 s once, static under reduced motion). Kept apart from the ten: `devi.json` top-level `guardian` (devis stays 10), `GUARDIAN` export, header strip shows it after a thin divider + "GUARDIAN" label, /about/devis has a separate Guardian card (lens "Warnings & safety"). No SUPPLY SHOCK / health banner exists in the web UI (only Discord text from signalSnapshot.js), so nothing to decorate there. p5_ui_look expects 11 header marks. Suite: step5_worker 2 FAIL (signal snapshot, not touched) + p5_public_sanity (other coder); p5_rewrite flaky once, passes alone.
+
 ## 2026-10-02 - Devi visibility on the home page (built, NOT restarted)
 - Header "Ten lenses" strip (one link to /about/devis, 10 marks at 30 px, staggered 150 ms single-play on load, replay on hover, name+lens+"Inspired by" tooltip, header only ~14 px taller); Big News items use Tara 24 px + glowing Tara in the panel header; feed "Understand this" chip Tara 18 px with glow; expanded feed rows show `ExplainPreview` (3 scenario lines + "Open card") above the card. DeviMark gained `delay`, `glow`, `named` props. Test: p5_ui_look checks 10 header marks. Screenshots: build/p5_screens/home_devis_{1366,1920}.png. Only failing suite: p5_public_sanity (classify.js / .bak_imf from the other coder). Web UI on 4180 needs a restart.
 
