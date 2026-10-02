@@ -220,6 +220,37 @@ const shutdownTimers = [];
 
 function getService(name) { return SERVICES.find(s => s.name === name); }
 
+// Auto-restart the web service when a new Next.js build lands (.next/BUILD_ID changes).
+// Waits until BUILD_ID has been stable for 15 s so a build that is still writing is not picked up.
+function watchBuildId() {
+  if (!withUI) return;
+  const idPath = path.join(ROOT, '.next', 'BUILD_ID');
+  let lastId = null;
+  let pendingId = null;
+  let pendingSince = 0;
+  try { lastId = fs.readFileSync(idPath, 'utf8').trim(); } catch (e) { lastId = null; }
+  const t = setInterval(() => {
+    if (shuttingDown) return;
+    let cur = null;
+    try { cur = fs.readFileSync(idPath, 'utf8').trim(); } catch (e) { return; }
+    if (!cur || cur === lastId) { pendingId = null; return; }
+    const now = Date.now();
+    if (pendingId !== cur) { pendingId = cur; pendingSince = now; return; }
+    if (now - pendingSince < 15000) return;
+    lastId = cur;
+    pendingId = null;
+    const st = state.get('web');
+    logSuper('web: new build detected (BUILD_ID ' + cur + '); restarting web');
+    if (st && st.child) {
+      try { st.child.kill(); } catch (e) { logSuper('web: kill failed: ' + (e && e.message ? e.message : e)); }
+    } else {
+      const svc = getService('web');
+      if (svc) startService(svc);
+    }
+  }, 5000);
+  shutdownTimers.push(t);
+}
+
 function recordExit(name, code) {
   const st = state.get(name);
   st.lastExitCode = code;
@@ -404,6 +435,7 @@ for (const svc of SERVICES) {
 // ---- Start ----
 const serviceNames = SERVICES.map(s => s.name).join(', ');
 console.log('supervisor started (services: ' + serviceNames + ')');
+watchBuildId();
 logSuper('supervisor started (pid ' + process.pid + ', services: ' + serviceNames + ')');
 
 writeStatus();

@@ -24,14 +24,14 @@ function startPriceWorker({ prisma, redis, futuresSymbols, intervalMs = 30000 })
     try {
       const T = post.priceTicker;
       if (!T) {
-        await prisma.post.update({ where: { id: post.id }, data: { priceStatus: 'na' } });
+        await prisma.post.update({ where: { id: post.id }, data: { priceStatus: 'no_ticker' } });
         return;
       }
       const syms = new Set(futuresSymbols() || []);
       if (syms.size === 0) return;
       const sym = [T + 'USDT', '1000' + T + 'USDT', '1000000' + T + 'USDT'].find((s) => syms.has(s));
       if (!sym) {
-        await prisma.post.update({ where: { id: post.id }, data: { priceStatus: 'na' } });
+        await prisma.post.update({ where: { id: post.id }, data: { priceStatus: 'no_perp' } });
         return;
       }
       const firstSeen = post.firstSeenAt instanceof Date ? post.firstSeenAt : new Date(post.firstSeenAt);
@@ -44,7 +44,7 @@ function startPriceWorker({ prisma, redis, futuresSymbols, intervalMs = 30000 })
       const p5 = byOpen.get(m0 + 4 * 60000);
       const p15 = byOpen.get(m0 + 14 * 60000);
       if (p0 == null || p1 == null || p5 == null || p15 == null) {
-        await prisma.post.update({ where: { id: post.id }, data: { priceStatus: 'na' } });
+        await prisma.post.update({ where: { id: post.id }, data: { priceStatus: 'no_data' } });
         return;
       }
       const ret1m = round3((p1 / p0 - 1) * 100);

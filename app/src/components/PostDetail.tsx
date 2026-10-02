@@ -259,7 +259,15 @@ export function PostDetail({ post }: { post: PostDTO }) {
             measuring… available ~16 min after first seen (Binance perp 1m candles)
           </p>
         ) : (
-          <p className="text-slate-500">no Binance perp for this coin</p>
+          <p className="text-slate-500">
+            {post.priceStatus === "no_perp"
+              ? "no Binance perp for this coin"
+              : post.priceStatus === "no_data"
+              ? "price data unavailable for that minute"
+              : post.priceStatus === "no_ticker"
+              ? "price reaction not measured (the coin was not recognised when this story arrived)"
+              : "price reaction not measured for this story"}
+          </p>
         )}
       </div>
 
