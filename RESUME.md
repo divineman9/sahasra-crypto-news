@@ -10,6 +10,10 @@
 - Live after restart: 108 adapters, news_live.json health.ok=true (tier-1 12/12, stale none), UI 4180 up (/coin/BTC, /api/search OK). **Coverage 42/50 setup coins (84%)** (was 8/48 at 11:54 AM).
 - Startup-folder shortcut "Sahasra News Collector.lnk" added 2026-09-26 (runs start-news-hidden.vbs at login). The web UI (port 4180) is NOT auto-started.
 
+## 2026-10-01 — Unlock category + supply-shock signal (built, NOT yet restarted/rebuilt)
+- DONE: classify.js `unlock` category (regex unlock/vesting cliff/token release/emission, parses `unlockAmount` + `unlockPct`, bearish, importance 60 or 80 when pct >= 5 or amount >= 1e9); coinSources.json 2Z/DoubleZero alias; UI badge "Big unlock" (src/lib/ui.ts, types.ts); signalSnapshot.js adds "SUPPLY SHOCK x%" and "unlock sources disagree" reasons to eventReasons from events_live.json `supply_shock` / `max_pct` / `sources` / `unlock_disagreements` (absent fields = no change). Tests: build/tests/p4_unlock.test.js (19/19). Public copy got the classify/alias/UI parts only.
+- NEXT: `cd app && npm run build` (the two suites p3_step8_look / p3_step5_coin fail only on the stale-build guard until then), restart collector (picks up classify + signalSnapshot) and web UI (badge). Add p4_unlock to run_all_tests.sh is done locally (commit alongside p4_wide_watchlist).
+
 ## NEXT (in order)
 1. ✅ DONE 2026-09-26 00:01 ET — **All-caps tagger fix** (tickers.js `isAllCapsTitle` incl. relay-label stripping for BWEnews "Tree News: …: BBG Tree News:"; bare tokens in all-caps titles only for curated `ambiguous:false` coins). Fable APPROVED (0 new false tags over 2,776 DB titles). Tests `build/tests/p3_allcaps.test.js` 30/30. **Tagger is now safe for the Discord webhook** (still needs DISCORD_NEWS_WEBHOOK from the user).
 2. ✅ DEPLOYED 2026-09-26 01:19 ET — Official GitHub: when /releases/latest names a tag missing from the atom feed, official.js asks api.github.com/repos/<o>/<r>/releases/latest (SUI mainnet-v1.80.1 now shows; AVAX/OP latest are >7 d old). Tests in p3_step6_sources (147/147).

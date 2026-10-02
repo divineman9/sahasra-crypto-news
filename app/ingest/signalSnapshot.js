@@ -81,6 +81,33 @@ function matchScheduledEntry(entry, base, symbol) {
   return false;
 }
 
+function supplyShockReasons(events, scheduled, base, symbol) {
+  const out = [];
+  if (!events || typeof events !== 'object') return out;
+  const arr = (v) => (Array.isArray(v) ? v.filter((e) => matchScheduledEntry(e, base, symbol)) : []);
+  const rows = (scheduled || []).slice();
+  const shockRows = arr(events.supply_shock);
+  const shock = rows.some((r) => r && r.supply_shock === true) || shockRows.length > 0;
+  if (shock) {
+    let maxPct = null;
+    const srcs = new Set();
+    for (const r of rows.concat(shockRows)) {
+      if (!r) continue;
+      for (const f of [r.max_pct, r.pct]) {
+        const n = Number(f);
+        if (f != null && Number.isFinite(n) && (maxPct === null || n > maxPct)) maxPct = n;
+      }
+      if (Array.isArray(r.sources)) r.sources.forEach((s) => srcs.add(String(s)));
+    }
+    const pctTxt = maxPct !== null ? ' ' + (Math.round(maxPct * 10) / 10) + '%' : '';
+    const srcTxt = srcs.size > 0 ? ' (' + Array.from(srcs).join('+') + ')' : '';
+    out.push('🔴 SUPPLY SHOCK' + pctTxt + srcTxt);
+  }
+  const dis = arr(events.unlock_disagreements);
+  if (dis.length > 0) out.push('🟠 unlock sources disagree');
+  return out;
+}
+
 function buildSnapshot({ setup, bbwAsof, bbwAsofMs, news, events, now, watcherSeenAt }) {
   if (!setup || typeof setup !== 'object') return null;
   const stage = setup.stage;
@@ -145,7 +172,7 @@ function buildSnapshot({ setup, bbwAsof, bbwAsofMs, news, events, now, watcherSe
   const ev = events && events.risk && events.risk[symbol];
   const side = setup.direction === 'DOWN' ? 'SHORT' : 'LONG';
   const eventLevel = ev && ev[side] ? ev[side].level : null;
-  const eventReasons = ev && ev[side] ? (ev[side].reasons != null ? ev[side].reasons : null) : null;
+  let eventReasons = ev && ev[side] ? (ev[side].reasons != null ? ev[side].reasons : null) : null;
   const eventBadges = (events && events.badges && events.badges[symbol]) || [];
   const eventsAgeMs = events && events.asof_ms ? clampInt(nowMs - events.asof_ms) : null;
 
@@ -154,6 +181,14 @@ function buildSnapshot({ setup, bbwAsof, bbwAsofMs, news, events, now, watcherSe
   if (events && Array.isArray(events.unlocks_upcoming)) {
     const matches = events.unlocks_upcoming.filter((e) => matchScheduledEntry(e, base, symbol));
     if (matches.length > 0) scheduled = matches;
+  }
+
+  // Supply-shock / source-disagreement reasons (collector fields n_parts, sources, max_pct,
+  // supply_shock, top-level supply_shock[] and unlock_disagreements[]). All optional: when the
+  // collector does not emit them nothing is added.
+  const extraReasons = supplyShockReasons(events, scheduled, base, symbol);
+  if (extraReasons.length > 0) {
+    eventReasons = (eventReasons == null ? [] : Array.isArray(eventReasons) ? eventReasons.slice() : [eventReasons]).concat(extraReasons);
   }
 
   const flagsEntryAll = news && news.flags ? (news.flags[base] || news.flags[symbol]) : null;
