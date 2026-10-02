@@ -74,7 +74,7 @@ function extractFacts(post, ctx) {
     kind: post.kind || 'news',
     url: post.url || null,
     published_at: isFinite(pubMs) ? new Date(pubMs).toISOString() : null,
-    unlock_pct_circ: null, unlock_pct: null, unlock_pct_basis: null, unlock_tokens: null, unlock_date_et: null, unlock_days: null, per_source_pct: null,
+    unlock_past: false, unlock_pct_circ: null, unlock_pct: null, unlock_pct_basis: null, unlock_tokens: null, unlock_date_et: null, unlock_days: null, per_source_pct: null,
     amount_usd: null, amount_coin: null, exchange: capExchange(post.exchange), market: null,
     price_t0: null, btc_t0: null, range_24h_pct: null,
     peg_usd: null, what_paused: null, body: null, event_date_et: null,
@@ -86,6 +86,7 @@ function extractFacts(post, ctx) {
       if (cal.tokens != null) f.unlock_tokens = Math.round(Number(cal.tokens));
       f.unlock_date_et = cal.date_et || null;
       f.unlock_days = cal.days != null ? Number(cal.days) : null;
+      if (ctx.now != null && isFinite(Number(cal.ts_ms)) && Number(cal.ts_ms) < ctx.now) { f.unlock_past = true; f.unlock_days = null; }
       if (cal.per_source_pct && typeof cal.per_source_pct === 'object') f.per_source_pct = cal.per_source_pct;
     }
     if (post.unlockPct != null) {
@@ -95,6 +96,7 @@ function extractFacts(post, ctx) {
     }
     if (f.unlock_tokens == null && post.unlockAmount != null) f.unlock_tokens = Math.round(post.unlockAmount);
     if (f.unlock_date_et == null) f.unlock_date_et = titleDate(title);
+    if (f.unlock_date_et == null && cal && cal.date_et_derived) f.unlock_date_et = cal.date_et_derived;
   }
   if (cat === 'hack') { f.amount_usd = parseUsd(title); f.amount_coin = parseCoinAmount(title); }
   if (sub === 'depeg') f.peg_usd = 1;
@@ -127,6 +129,7 @@ function mergeFacts(cur, nxt) {
   out.amount_usd = max(cur.amount_usd, nxt.amount_usd);
   const ca = cur.amount_coin, na = nxt.amount_coin;
   out.amount_coin = ca && na && ca.symbol === na.symbol ? (na.qty > ca.qty ? na : ca) : (ca || na || null);
+  if (nxt.unlock_past) out.unlock_past = true;
   for (const k of ['unlock_date_et', 'unlock_days', 'per_source_pct', 'market', 'event_date_et', 'what_paused', 'body', 'exchange', 'peg_usd']) if (out[k] == null) out[k] = nxt[k];
   const better = nxt.source_tier < cur.source_tier || (nxt.source_tier === cur.source_tier && Date.parse(nxt.published_at) > Date.parse(cur.published_at));
   if (better) for (const k of ['headline', 'source', 'source_tier', 'kind', 'url', 'published_at']) out[k] = nxt[k];

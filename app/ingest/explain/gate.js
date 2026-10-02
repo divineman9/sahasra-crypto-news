@@ -2,6 +2,7 @@
 // P5 §4.1 big-news gate. Pure except for the optional private unlock-calendar read (mtime-cached).
 const fs = require('fs');
 const { TOP_EXCHANGES } = require('../config');
+const { etShort } = require('./timeET');
 
 const MACRO_TOPICS = [
   ['fed_rate', /\b(fed chair|federal reserve|fomc|powell|rate (cut|hike)s?|interest rates?)\b/i],
@@ -22,7 +23,16 @@ function calendarRows(calPath) {
     const st = fs.statSync(calPath);
     if (calCache.path === calPath && calCache.mtime === st.mtimeMs) return calCache.rows;
     const j = JSON.parse(fs.readFileSync(calPath, 'utf8'));
-    calCache = { path: calPath, mtime: st.mtimeMs, rows: Array.isArray(j.supply_shock) ? j.supply_shock : [] };
+    // supply_shock rows (aggregated, carry date_et/days) first; then unlocks_upcoming rows >= 5% of
+    // circulating for coins the aggregate missed (date_et_derived from ts_ms; a headline's own date wins).
+    const rows = Array.isArray(j.supply_shock) ? j.supply_shock.slice() : [];
+    const have = new Set(rows.map((r) => String(r.symbol || '').toUpperCase()));
+    for (const r of Array.isArray(j.unlocks_upcoming) ? j.unlocks_upcoming : []) {
+      const sym = String(r.symbol || '').toUpperCase();
+      if (!sym || have.has(sym) || !(Number(r.pct_circ) >= 5) || !isFinite(Number(r.ts_ms))) continue;
+      rows.push(Object.assign({}, r, { date_et_derived: etShort(Number(r.ts_ms)) }));
+    }
+    calCache = { path: calPath, mtime: st.mtimeMs, rows };
     return calCache.rows;
   } catch (e) {
     return [];
@@ -35,7 +45,9 @@ function calendarHit(symbol, now, calPath) {
   for (const r of calendarRows(calPath)) {
     if (String(r.symbol || '').toUpperCase() !== s) continue;
     if (!(Number(r.pct_circ) >= 5)) continue;
-    if (Math.abs(Number(r.ts_ms) - now) <= 72 * 3600e3) return r;
+    // upcoming within 72h, or already unlocked within the last 24h (card is worded in past tense)
+    const dt = Number(r.ts_ms) - now;
+    if (dt <= 72 * 3600e3 && dt >= -24 * 3600e3) return r;
   }
   return null;
 }

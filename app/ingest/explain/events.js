@@ -155,7 +155,7 @@ function createEngine(opts = {}) {
     if (ev && ev.post_ids.includes(post.id)) return ev;
 
     const ticker = g.coin;
-    const ctx = { category: g.category, subtype: g.subtype, ticker, name: ticker ? (post.names && post.names[ticker]) || nameFor(ticker) : (post.exchange || null), cal: g.calendar };
+    const ctx = { category: g.category, subtype: g.subtype, ticker, name: ticker ? (post.names && post.names[ticker]) || nameFor(ticker) : (post.exchange || null), cal: g.calendar, now };
     const nf = extractFacts(post, ctx);
 
     if (ev) {

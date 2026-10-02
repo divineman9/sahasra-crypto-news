@@ -36,6 +36,14 @@ const cls = (title, kind = 'news') => classify({ title, kind }, [...T.tagTickers
   for (const t of ['DoubleZero to release 1.655 billion tokens', 'Vesting schedule ends for team tokens', 'ARB unlocks 113M tokens worth $50M', '16.3% of total supply unlocked', 'SUI vesting cliff Oct 2', 'Team unlocks 48% of circulating', '1,655,000,000 tokens unlock']) eq('HIT ' + t, cls(t).category, 'unlock');
   for (const t of ['Apple unlocks new feature', 'Coinbase unlocks staking for users', 'Unlock the power of DeFi', 'Tether unlocks new blockchain support', 'Ethereum emissions fall', 'Bitcoin carbon emissions report', 'Protocol release v2 goes live', 'Release notes for v2', 'IMF unlocks $139 million for El Salvador, but warns of risks', 'World Bank unlocks $2 billion loan for Ukraine', 'Government unlocks $500 million in funding', 'EU unlocks €50M for farmers']) eq('MISS ' + t, cls(t).category === 'unlock', false);
 
+  console.log('— classify: coin-anchored unlock (2Z)');
+  for (const t of ["DoubleZero's 2Z Leads $174 Million in Token Unlocks Scheduled for Next Week", 'DoubleZero (2Z) Gains 21.68% Ahead of Disputed Oct. 2 Unlock', 'DoubleZero jumps 29% as OI climbs 113% – Can 2Z outrun its $124M unlock?']) {
+    const r = cls(t);
+    eq('2Z HIT ' + t, [r.category, r.importance], ['unlock', 60]);
+  }
+  eq('2Z with pct>=5 of supply -> 80', cls('DoubleZero 2Z unlock: 16.3% of total supply on Oct 2').importance, 80);
+  eq('coin + unlock new feature stays other', cls('DoubleZero (2Z) unlocks new features for users').category, 'other');
+  eq('no coin, bare unlock stays other', cls('Company unlocks value for shareholders after loan deal').category, 'other');
   console.log('— classify: non-unlock unchanged');
   eq('BTC rally unchanged', cls('Bitcoin surges to record high'), { category: 'other', importance: 20, sentiment: 'bullish' });
   eq('listing unchanged', cls('Binance will list FOO'), { category: 'listing', importance: 60, sentiment: 'bullish' });

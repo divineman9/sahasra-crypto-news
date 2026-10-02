@@ -25,6 +25,26 @@ eq('calendar <5% fails', gate.evaluate(P({ category: 'unlock', tickers: ['LOW'] 
 eq('calendar outside 72h fails', gate.evaluate(P({ category: 'unlock', tickers: ['OLD'] }), { now: NOW, calendarPath: cal }).pass, false);
 eq('empty calendar path = news only', gate.evaluate(P({ category: 'unlock', tickers: ['STO'] }), { now: NOW, calendarPath: '' }).pass, false);
 
+// 2Z-style: headline has no pct; the calendar's unlocks_upcoming row (no supply_shock aggregate) supplies it.
+const cal2 = path.join(tmp, 'events_live2.json');
+const U = (sym, ts, pct) => ({ symbol: sym, ts_ms: ts, pct_circ: pct, max_pct: pct, supply_shock: pct >= 5, n_parts: 2, sources: ['defillama', 'tokenomist'] });
+fs.writeFileSync(cal2, JSON.stringify({ supply_shock: [], unlocks_upcoming: [U('2Z', Date.parse('2026-10-02T00:00:00Z'), 47.7), U('JUST', NOW - 23 * 3600e3, 8), U('GONE', NOW - 25 * 3600e3, 8), U('SOFT', NOW + 3600e3, 2)] }));
+const gz = gate.evaluate(P({ category: 'unlock', unlockPct: null, tickers: ['2Z'] }), { now: NOW, calendarPath: cal2 });
+check('unlocks_upcoming row >=5% passes (2Z, 13h past)', gz.pass && gz.calendar && gz.calendar.pct_circ === 47.7, gz);
+eq('unlocked 23h ago still passes', gate.evaluate(P({ category: 'unlock', tickers: ['JUST'] }), { now: NOW, calendarPath: cal2 }).pass, true);
+eq('unlocked 25h ago fails', gate.evaluate(P({ category: 'unlock', tickers: ['GONE'] }), { now: NOW, calendarPath: cal2 }).pass, false);
+eq('unlocks_upcoming <5% fails', gate.evaluate(P({ category: 'unlock', tickers: ['SOFT'] }), { now: NOW, calendarPath: cal2 }).pass, false);
+{
+  const t2z = 'DoubleZero (2Z) Gains 21.68% Ahead of Disputed Oct. 2 Unlock';
+  const c2 = classify({ title: t2z, kind: 'news' }, ['2Z']);
+  const { e } = mkEngine({ calendarPath: cal2 });
+  const card = e.consider(P({ id: 'zp', title: t2z, category: c2.category, unlockPct: c2.unlockPct, unlockPctBasis: c2.unlockPctBasis, unlockAmount: c2.unlockAmount, tickers: ['2Z'], importance: c2.importance, publishedAt: new Date(NOW - 3600e3) }));
+  check('2Z calendar card: 47.7% of circulating, past tense, headline date', card && card.facts.unlock_pct_circ === 47.7 && card.facts.unlock_past === true && card.text.what === 'About 47.7% more 2Z coins unlocked on Oct 2.', card && card.text && card.text.what);
+  const fut = mkEngine({ calendarPath: cal2 }); fut.clock.t = Date.parse('2026-10-01T12:00:00Z');
+  const c3 = fut.e.consider(P({ id: 'zf', title: t2z, category: 'unlock', unlockPct: null, tickers: ['2Z'], importance: 60, publishedAt: new Date(fut.clock.t - 3600e3) }));
+  check('same row before the unlock stays future tense', c3 && c3.facts.unlock_past === false && /^On Oct 2 about 47\.7% more 2Z coins become free to trade/.test(c3.text.what), c3 && c3.text.what);
+}
+
 console.log('— gate: hack / depeg / freeze');
 eq('hack tier2 passes (theft)', [ev({ category: 'hack', title: 'Protocol X hacked, $5M drained' }).pass, ev({ category: 'hack', title: 'Protocol X hacked, $5M drained' }).subtype], [true, 'theft']);
 eq('hack oracle exploit subtype', ev({ category: 'hack', title: 'Lending app oracle exploit hits pools' }).subtype, 'exploit');

@@ -48,7 +48,10 @@ function unlock(f) {
   const d = f.unlock_date_et;
   let what;
   const tp = f.unlock_pct;
-  if (pct == null && tp != null && d) what = `On ${d} coins equal to about ${tp}% of all ${T} that will ever exist become free to trade.`;
+  if (f.unlock_past && pct != null && d) what = `About ${pct}% more ${T} coins unlocked on ${d}.`;
+  else if (f.unlock_past && pct != null) what = `About ${pct}% more ${T} coins have just unlocked.`;
+  else if (f.unlock_past && tp != null && d) what = `Coins equal to about ${tp}% of all ${T} that will ever exist unlocked on ${d}.`;
+  else if (pct == null && tp != null && d) what = `On ${d} coins equal to about ${tp}% of all ${T} that will ever exist become free to trade.`;
   else if (pct == null && tp != null) what = `Coins equal to about ${tp}% of all ${T} that will ever exist are due to become free to trade soon.`;
   else if (pct != null && d) what = `On ${d} about ${pct}% more ${T} coins become free to trade.`
   else if (pct != null) what = `About ${pct}% more ${T} coins are due to become free to trade soon.`;
