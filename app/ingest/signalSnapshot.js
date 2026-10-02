@@ -93,7 +93,8 @@ function supplyShockReasons(events, scheduled, base, symbol) {
     const srcs = new Set();
     for (const r of rows.concat(shockRows)) {
       if (!r) continue;
-      for (const f of [r.max_pct, r.pct]) {
+      // shock rows from the producer carry pct_circ; scheduled rows carry max_pct.
+      for (const f of [r.max_pct, shockRows.includes(r) ? r.pct_circ : null]) {
         const n = Number(f);
         if (f != null && Number.isFinite(n) && (maxPct === null || n > maxPct)) maxPct = n;
       }
@@ -104,7 +105,11 @@ function supplyShockReasons(events, scheduled, base, symbol) {
     out.push('🔴 SUPPLY SHOCK' + pctTxt + srcTxt);
   }
   const dis = arr(events.unlock_disagreements);
-  if (dis.length > 0) out.push('🟠 unlock sources disagree');
+  if (dis.length > 0) {
+    const badges = Array.from(new Set(dis.map((d) => (d && typeof d.badge === 'string' ? d.badge.trim() : '')).filter(Boolean)));
+    if (badges.length > 0) badges.forEach((bd) => out.push(bd));
+    else out.push('🟠 unlock sources disagree');
+  }
   return out;
 }
 

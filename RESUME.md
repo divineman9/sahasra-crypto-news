@@ -12,6 +12,7 @@
 
 ## 2026-10-01 — Unlock category + supply-shock signal (built, NOT yet restarted/rebuilt)
 - DONE: classify.js `unlock` category (regex unlock/vesting cliff/token release/emission, parses `unlockAmount` + `unlockPct`, bearish, importance 60 or 80 when pct >= 5 or amount >= 1e9); coinSources.json 2Z/DoubleZero alias; UI badge "Big unlock" (src/lib/ui.ts, types.ts); signalSnapshot.js adds "SUPPLY SHOCK x%" and "unlock sources disagree" reasons to eventReasons from events_live.json `supply_shock` / `max_pct` / `sources` / `unlock_disagreements` (absent fields = no change). Tests: build/tests/p4_unlock.test.js (19/19). Public copy got the classify/alias/UI parts only.
+- REVISED (Fable review): unlock regex now context-anchored POS+NEG (no more 'Apple unlocks new feature'); importance 80 only when pct >= 5; `unlockPctBasis`; unit-less amounts; symbol-kind keeps importance; snapshot folds shock-row pct_circ and prefers disagreement badge text. p4_unlock 39/39.
 - NEXT: `cd app && npm run build` (the two suites p3_step8_look / p3_step5_coin fail only on the stale-build guard until then), restart collector (picks up classify + signalSnapshot) and web UI (badge). Add p4_unlock to run_all_tests.sh is done locally (commit alongside p4_wide_watchlist).
 
 ## NEXT (in order)
