@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ExplainEvent } from "@/lib/explainTypes";
 import { explainTag } from "@/lib/explainApi";
 import { etClock, etFull } from "@/lib/timeET";
@@ -22,12 +23,13 @@ export function ExplainCard({ event, play = false }: { event: ExplainEvent; play
   return (
     <article className="explain-card" data-event={event.id} aria-label="Understand this">
       <header className="ex-header">
-        <span className="ex-header-mark"><DeviMark devi="tara" size={40} play={play} /></span>
+        <Link href="/about/devis#tara" className="ex-header-mark" aria-label="About the ten lenses"><DeviMark devi="tara" size={40} play={play} /></Link>
         <div className="ex-header-main">
           <div className="ex-header-top">
             <h2 className="ex-title">Understand this</h2>
             <EvidenceMeter evidence={event.evidence} />
           </div>
+          <Link href="/about/devis" className="ex-about ex-link-quiet">About the ten lenses →</Link>
           <div className="ex-meta">
             <strong>{subject}</strong>
             <span className={`ex-tag ${tag.cls}`}>{tag.label}</span>
@@ -71,7 +73,7 @@ export function ExplainCard({ event, play = false }: { event: ExplainEvent; play
       <TermsAndVoices glossary={event.glossary} timeline={event.timeline} play={play} />
 
       <div className="ex-rule" />
-      <footer className="ex-footer">Explains the news. Not advice. Nothing here says buy or sell.</footer>
+      <footer className="ex-footer">Explains the news. Not advice. Nothing here says buy or sell. <Link href="/about/devis" className="ex-about">About the ten lenses →</Link></footer>
     </article>
   );
 }

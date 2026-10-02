@@ -115,7 +115,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         ws.on('message', (m) => { const j = JSON.parse(m); if (j.id && pend.has(j.id)) { pend.get(j.id)(j); pend.delete(j.id); } });
         const send = (method, params = {}) => new Promise((r) => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
         await send('Runtime.enable'); await send('Page.enable');
-        await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: reduced ? 'reduce' : 'no-preference' }] });
+        await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: reduced ? 'reduce' : 'no-preference' }, { name: 'prefers-color-scheme', value: 'light' }] });
         await send('Page.navigate', { url });
         await sleep(waitMs);
         const r = await send('Runtime.evaluate', { returnByValue: true, awaitPromise: true, expression: expr });
@@ -130,6 +130,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       check('reduced motion: no is-playing class and no animations (static frames)', m2.playing === 0 && m2.anims === 0, m2);
       const side = JSON.parse(await probe(`${BASE}/`, false, "new Promise((r) => { let n = 0; const iv = setInterval(() => { const rows = document.querySelectorAll('[data-testid=big-news] .big-news-row'); if (rows.length >= 2 || ++n > 40) { clearInterval(iv); r(JSON.stringify({ rows: rows.length, text: document.querySelector('[data-testid=big-news]')?.innerText || '', svgs: document.querySelectorAll('[data-testid=big-news] svg[aria-hidden=true]').length })); } }, 500); })", 1500) || '{}');
       check('sidebar: Big news lists today\'s events (max 5) with Tara marks, tags and ET times', side.rows === 2 && side.svgs >= 2 && /Unlock/i.test(side.text) && / (AM|PM) ET/.test(side.text), side);
+      // theme: Sahasra is dark neon only; a light OS setting must not turn the card or the legend white
+      const th = JSON.parse(await probe(`${BASE}/post/${uPost.id}`, false, "(() => { const c = document.querySelector('.explain-card'); const rgb = getComputedStyle(c).backgroundColor.match(/[0-9]+/g).slice(0, 3).map(Number); const links = [...c.querySelectorAll('a')].filter((a) => (a.getAttribute('href') || '').startsWith('/about/devis')).length; return JSON.stringify({ rgb, links, mono: /mono|Consolas|Menlo|Courier/i.test(getComputedStyle(c).fontFamily) }); })()", 2500) || '{}');
+      check('card is dark neon even when the OS prefers light', th.rgb && Math.max(...th.rgb) < 90, th);
+      check('card links to /about/devis (header mark, about link, footer, heading marks)', th.links >= 3, th);
+      check('card uses the app mono font', th.mono === true, th);
+      const lg = JSON.parse(await probe(`${BASE}/about/devis`, false, "(() => { const li = document.querySelector('.devi-legend-item'); const rgb = getComputedStyle(li).backgroundColor.match(/[0-9]+/g).slice(0, 3).map(Number); return JSON.stringify({ rgb, header: !!document.querySelector('header.sahasra-header'), anchors: document.querySelectorAll('.devi-legend-item[id]').length, bodyRgb: getComputedStyle(document.querySelector('main')).backgroundColor }); })()", 2500) || '{}');
+      check('legend: Sahasra header + dark panels (not white) under a light OS setting', lg.header === true && Math.max(...lg.rgb) < 90 && lg.bodyRgb === 'rgba(0, 0, 0, 0)', lg);
+      eq('legend: ten anchors (#tara ... #matangi)', lg.anchors, 10);
+      const home = JSON.parse(await probe(`${BASE}/`, false, "JSON.stringify({ side: [...document.querySelectorAll('nav a')].filter((a) => a.getAttribute('href') === '/about/devis').length, head: [...document.querySelectorAll('header a')].filter((a) => a.getAttribute('href') === '/about/devis').length })", 2500) || '{}');
+      eq('home: Ten lenses link in the left nav and in the header', [home.side, home.head], [1, 1]);
       const a = await pageText(`${BASE}/post/${uPost.id}`);
       check('unlock card rendered on /post/<id>', !!a.res, a.errors);
       if (a.res) {

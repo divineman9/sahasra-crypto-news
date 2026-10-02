@@ -37,7 +37,7 @@ export function DeviMark({
     <span
       ref={ref}
       className="devi-wrap inline-flex shrink-0 items-center"
-      title={tooltip ? `${d.tooltip}\n${d.meaning}` : undefined}
+      title={tooltip ? `${d.tooltip}\n${d.meaning}\nAbout the ten lenses: /about/devis` : undefined}
       style={{ lineHeight: 0 }}
       onMouseEnter={replay ? again : undefined}
       onClick={replay ? again : undefined}

@@ -67,7 +67,7 @@ eq('DEVI_BY_KEY lookup', DEVI_BY_KEY.kali.name, 'Kali');
 console.log('— CSS tokens');
 const css = fs.readFileSync(APP + '/src/app/globals.css', 'utf8');
 const idx = (s) => css.indexOf(s);
-check('light overrides exist (data-theme + prefers-color-scheme)', idx('[data-theme="light"]') > 0 && idx('prefers-color-scheme: light') > 0);
+check('light overrides exist only under [data-theme="light"]; no OS light-scheme switch (app is dark neon)', idx('[data-theme="light"]') > 0 && idx('prefers-color-scheme: light') < 0);
 for (const d of data.devis) {
   const hexes = [d.colours.dark, d.colours.light, d.colours.accentDark, d.colours.accentLight];
   check(d.key + ' tokens in globals.css (both themes)', css.includes(`--devi-${d.key}:`) && css.includes(`--devi-${d.key}-2:`) && hexes.every((h) => css.toLowerCase().includes(h.toLowerCase())), hexes);

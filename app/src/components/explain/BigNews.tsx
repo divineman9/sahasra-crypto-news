@@ -27,8 +27,11 @@ export function BigNews() {
   const today = etDay(Date.now());
   const rows = (events ?? []).filter((e) => etDay(e.created_at) === today).slice(0, 5);
   return (
-    <section className="border-b border-slate-800 p-3 font-mono text-[11px] text-slate-300" aria-label="Big news today" data-testid="big-news">
-      <h2 className="mb-2 text-[10px] uppercase tracking-wide text-slate-500">Big news · today</h2>
+    <section className="m-2 rounded border border-cyan-500/30 bg-slate-900/40 p-3 font-mono text-[11px] text-slate-300" aria-label="Big news today" data-testid="big-news">
+      <h2 className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500">
+        Big news · today
+        <Link href="/about/devis" className="ml-auto normal-case tracking-normal text-slate-600 hover:text-cyan-300" title="About the ten lenses">lenses →</Link>
+      </h2>
       {rows.length === 0 ? (
         <p className="text-slate-500">{events === null ? "loading…" : "Nothing big yet today."}</p>
       ) : (
