@@ -4,11 +4,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, dozen: 12, hundred: 100, thousand: 1000 };
 const MULT = { k: 1e3, thousand: 1e3, m: 1e6, million: 1e6, b: 1e9, bn: 1e9, billion: 1e9 };
 const BANNED = /\b(buy|sell|long|short|target|entry|stop loss|take profit|guaranteed|will go|moon|dump)\b/i;
 const RECOMMEND = /\b(i|we)\s+(recommend|suggest|advise)\b/i;
-const URL_RE = /https?:\/\/|www\./i;
+const URL_RE = /https?:\/\/|www\.|\bdot\s+(com|org|net|io|xyz|co|app|ai|me)\b|[a-z0-9]\.(com|org|net|io|xyz|co|app|ai|me)\b/i;
 const MARKDOWN = /[*_`#]|\]\(|^\s*[-•]\s/m;
 const NUM_RE = /\$?(\d[\d,]*(?:\.\d+)?)\s*(%|thousand|million|billion|bn|k|m|b)?(?![A-Za-z])/gi;
 const FIELD_MIN = 0.4;
@@ -29,7 +29,7 @@ function numbersIn(text) {
     out.push(norm(suf && suf !== '%' ? base * MULT[suf] : base));
     out.push(norm(base)); // raw digits too ("1.66B" also allows 1.66)
   }
-  const w = s.toLowerCase().match(/\b(one|two|three|four|five|six|seven|eight|nine|ten)\b/g) || [];
+  const w = s.toLowerCase().match(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|dozen|hundred|thousand)\b/g) || [];
   for (const x of w) out.push(WORDS[x]);
   return out;
 }

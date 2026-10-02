@@ -9,6 +9,8 @@ const templates = require('./templates');
 const evidence = require('./evidence');
 const { createRewriter } = require('./rewrite');
 const heatLib = require('./heat');
+const outcomesLib = require('./outcomes');
+const baseRatesLib = require('./baseRates');
 const { etDay } = require('./timeET');
 const { NEG_RE } = require('../classify');
 
@@ -50,6 +52,9 @@ function createEngine(opts = {}) {
   const rewriter = opts.rewriteCmd ? createRewriter({ dir, cmd: opts.rewriteCmd, dailyMax: opts.rewriteDailyMax || 20, now: nowFn, timeoutMs: opts.rewriteTimeoutMs || 20000, log }) : null;
   const fetchHeat = opts.fetchHeat || null; // (ticker) -> {range_24h_pct, funding, oi_chg_24h}
   const privHeat = !!opts.privateHeat;
+  const outcomes = opts.priceFn ? outcomesLib.createOutcomes({ dir, now: nowFn, priceFn: opts.priceFn, log }) : null;
+  const rates = baseRatesLib.createStore({ dir, now: nowFn, outcomes, log, minN: opts.minN });
+  let lastOutcomesRun = 0;
   const pending = new Set();
   const bg = (p) => { const q = p.catch((e) => log('[explain] background error: ' + (e && e.message || e))).then(() => { pending.delete(q); }); pending.add(q); return q; };
 
@@ -70,7 +75,28 @@ function createEngine(opts = {}) {
     ev.glossary = ev.text.glossary || [];
     delete ev.text.glossary;
     ev.evidence = evidence.compute(ev.timeline, ev.facts);
+    applyBaseRate(ev);
     if (rewriter) rewriter.applyCached(ev);
+  }
+
+  const MEASURE = { unlock: 'coins were lower vs BTC 30 days after an unlock this big' };
+  // "Historically X of N ..." only from base_rates.json and only when n >= min_n; else the literal stays.
+  function applyBaseRate(ev) {
+    const br = rates.get(ev.category + ':' + ev.subtype);
+    if (!br) return;
+    const down = ev.text.scenarios.find((s) => s.dir === 'down');
+    if (down) down.base_rate = { x: br.lower_vs_btc_d30, n: br.n, measure: MEASURE[ev.category] || 'coins were lower vs BTC 30 days after an event like this' };
+    ev.text.uncertain = ev.text.uncertain.filter((u) => u !== 'Not enough comparable cases');
+  }
+
+  // Past cases from the forward log: same category:subtype, same coin first, finished rows before open ones.
+  function setHistory(ev) {
+    if (!outcomes) return;
+    const coin = ev.coin ? ev.coin.ticker : null;
+    const rows = outcomes.all().filter((r) => r.category === ev.category && r.subtype === ev.subtype && r.event_id !== ev.id && r.status !== 'no_price');
+    rows.sort((a, b) => ((b.coin === coin) - (a.coin === coin)) || ((b.status === 'done') - (a.status === 'done')) || (Date.parse(b.t0) - Date.parse(a.t0)));
+    const cases = rows.slice(0, 5).map((r) => ({ date: r.date, coin: r.coin, headline: r.headline, r1: r.d1 ? r.d1.ret_vs_btc : null, r7: r.d7 ? r.d7.ret_vs_btc : null, r30: r.d30 ? r.d30.ret_vs_btc : null }));
+    ev.history = { cases, note: cases.length ? null : 'Not enough comparable cases' };
   }
 
   async function refreshHeat(ev) {
@@ -141,6 +167,7 @@ function createEngine(opts = {}) {
       ev.rev += 1;
       ev.updated_at = nowIso;
       rebuild(ev, post, false);
+      setHistory(ev);
       ev.last_change = { rev: ev.rev, at: nowIso, text: describeChange(before, ev, post, kind) };
       save();
       afterChange(ev);
@@ -179,9 +206,11 @@ function createEngine(opts = {}) {
       live_at: live ? nowIso : null,
     };
     rebuild(ev, post, true);
+    setHistory(ev);
     ev.last_change = null;
     events.push(ev);
     save();
+    if (live && outcomes) bg(outcomes.record(ev));
     afterChange(ev);
     log(`[explain] new ${ev.state} event ${ev.id} (${g.reason})`);
     return ev;
@@ -199,6 +228,7 @@ function createEngine(opts = {}) {
       q[0].state = 'live';
       q[0].live_at = new Date(now).toISOString();
       q[0].updated_at = q[0].live_at;
+      if (outcomes) bg(outcomes.record(q[0]));
       n++;
       log(`[explain] promoted ${q[0].id}`);
     }
@@ -225,6 +255,11 @@ function createEngine(opts = {}) {
 
   function tick() {
     const r = { promoted: promoteQueue(), ...closeOld() };
+    try { rates.maybeRebuild(); } catch (e) { log('[explain] base rates error: ' + e.message); }
+    if (outcomes && nowFn() - lastOutcomesRun >= HOUR) {
+      lastOutcomesRun = nowFn();
+      bg(outcomes.run().then((n) => { if (n) refreshDerived(); }));
+    }
     if (fetchHeat) {
       const now = nowFn();
       const due = load().filter((e) => e.state === 'live' && e.coin && (!e.heat || !e.heat.checked_at || now - Date.parse(e.heat.checked_at) > 10 * 60e3)).slice(0, 5);
@@ -232,6 +267,19 @@ function createEngine(opts = {}) {
     }
     return r;
   }
+  // After outcomes fill in: refresh history + base-rate lines of live events.
+  function refreshDerived() {
+    let ch = false;
+    for (const e of load()) {
+      if (e.state !== 'live') continue;
+      const before = JSON.stringify([e.history, e.text.scenarios.map((s) => s.base_rate), e.text.uncertain]);
+      setHistory(e);
+      rebuildText(e);
+      if (JSON.stringify([e.history, e.text.scenarios.map((s) => s.base_rate), e.text.uncertain]) !== before) ch = true;
+    }
+    if (ch) save();
+  }
+  function rebuildText(e) { applyBaseRate(e); }
   const settled = async () => { while (pending.size) await Promise.all([...pending]); };
 
   const visible = (e) => e.state !== 'queued';
@@ -246,7 +294,7 @@ function createEngine(opts = {}) {
   const byPost = (postId) => load().find((e) => visible(e) && e.post_ids.includes(postId)) || null;
   function reset() { events = null; }
 
-  return { consider, promoteQueue, closeOld, tick, list, get, byPost, reset, settled, file, _events: () => load() };
+  return { consider, promoteQueue, closeOld, tick, list, get, byPost, reset, settled, file, outcomes, rates, _events: () => load() };
 }
 
 let def = null;
@@ -259,6 +307,7 @@ function engine() {
       rewriteDailyMax: parseInt(process.env.EXPLAIN_REWRITE_DAILY_MAX || '', 10) || cfg.EXPLAIN_REWRITE_DAILY_MAX,
       fetchHeat: process.env.EXPLAIN_HEAT === '0' ? null : heatLib.makeFetcher((u) => require('../http').request(u, { timeoutMs: 8000 }), priv),
       privateHeat: priv,
+      priceFn: outcomesLib.makePriceFn((u) => require('../http').request(u, { timeoutMs: 8000 })),
     });
   }
   return def;

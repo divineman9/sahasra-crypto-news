@@ -35,3 +35,6 @@ build/tests/.test_db_url
 
 # Runtime cache written by the gnews adapter
 app/ingest/cache/gnews_tiers.json
+
+# P5 explain data: events, forward log, base rates (+ private seed), rewrite cache
+app/ingest/cache/explain/

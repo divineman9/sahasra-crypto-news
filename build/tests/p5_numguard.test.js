@@ -44,4 +44,12 @@ eq('scenario count mismatch rejected', ok({ why: tpl.why, tradeoffs: tpl.tradeof
 check('invalid UTF-8 (replacement char) rejected', !ok(rewrite({ why: tpl.why + '\uFFFD' })).ok);
 check('fenced JSON tolerated, then guarded', guard.validateOutput('```json\n' + JSON.stringify(rewrite({})) + '\n```', tpl, facts).ok);
 check('known ticker already in the template is fine (BTC)', ok(rewrite({ tradeoffs: tpl.tradeoffs })).ok);
+console.log('— number words eleven..twenty, hundred, thousand, dozen; dot com');
+eq('words: eleven..twenty / dozen / hundred / thousand parsed', guard.numbersIn('eleven, nineteen, twenty, a dozen, a hundred, a thousand').sort((a, b) => a - b), [11, 12, 19, 20, 100, 1000]);
+check('invented "fifteen" rejected', /number 15 not in input/.test(ok(rewrite({ why: tpl.why + ' About fifteen more.' })).reason || ''));
+check('invented "a dozen" rejected', /number 12 not in input/.test(ok(rewrite({ why: tpl.why + ' A dozen buyers wait.' })).reason || ''));
+check('invented "hundred" rejected', /number 100 not in input/.test(ok(rewrite({ why: tpl.why + ' A hundred holders agree.' })).reason || ''));
+check('"dot com" rejected as a URL', /URL/.test(ok(rewrite({ why: tpl.why + ' See example dot com for more.' })).reason || ''));
+check('"site.io" rejected as a URL', /URL/.test(ok(rewrite({ why: tpl.why + ' See stakestone.io now.' })).reason || ''));
+check('plain sentence ending with a period then a word is not a URL', ok(rewrite({ tradeoffs: 'Early holders can trade their coins. Me too is not here, everyone else holds a bigger pile than yesterday.' })).ok || !/URL/.test(ok(rewrite({ tradeoffs: 'Early holders can trade their coins. Me too is not here, everyone else holds a bigger pile than yesterday.' })).reason));
 done('p5_numguard');
