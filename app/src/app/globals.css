@@ -231,43 +231,6 @@ a:hover {
   --ex-cyan: #00f0ff;
   --ex-mark-glow: drop-shadow(0 0 1px rgba(0, 240, 255, 0.55));
 }
-[data-theme="light"] {
-  --devi-tara: #1d4ed8;
-  --devi-tara-2: #8a96ad;
-  --devi-kali: #2a3a8c;
-  --devi-kali-2: #c81e45;
-  --devi-bhuvaneshwari: #b07400;
-  --devi-bhuvaneshwari-2: #9d4dff;
-  --devi-tripurasundari: #be123c;
-  --devi-tripurasundari-2: #e0b84a;
-  --devi-chhinnamasta: #c2410c;
-  --devi-chhinnamasta-2: #9a8f78;
-  --devi-kamala: #be3d7f;
-  --devi-kamala-2: #ffb000;
-  --devi-bhairavi: #c21e3e;
-  --devi-bhairavi-2: #c67a3c;
-  --devi-bagalamukhi: #a88600;
-  --devi-bagalamukhi-2: #b9892b;
-  --devi-dhumavati: #55606f;
-  --devi-dhumavati-2: #8a93a3;
-  --devi-matangi: #0f8a58;
-  --devi-matangi-2: #14b8a6;
-  --ex-bg: #fbfcff;
-  --ex-fg: #0f172a;
-  --ex-muted: #475569;
-  --ex-border: rgba(29, 78, 216, 0.5);
-  --ex-rule: rgba(15, 23, 42, 0.14);
-  --ex-glow: transparent;
-  --ex-dot-on: #1d4ed8;
-  --ex-dot-off: rgba(71, 85, 105, 0.3);
-  --ex-link: #1d4ed8;
-  --ex-red: #be123c;
-  --ex-amber: #92600a;
-  --ex-violet: #6d28d9;
-  --ex-lime: #166534;
-  --ex-cyan: #0369a1;
-  --ex-mark-glow: none;
-}
 
 .devi { display: block; overflow: visible; }
 .devi-tara { color: var(--devi-tara); }
@@ -481,6 +444,12 @@ a:hover {
   --ex-lime: #4ade80;
   --ex-cyan: #38bdf8;
   --ex-mark-glow: drop-shadow(0 0 1px rgba(0, 240, 255, 0.55));
+  --ex-title: #67e8f9;
+  --ex-heading: #e2e8f0;
+  --ex-strong: #f1f5f9;
+  --ex-legend-bg: rgba(15, 23, 42, 0.4);
+  --ex-legend-hover: rgba(6, 182, 212, 0.45);
+  --ex-legend-glow: rgba(0, 240, 255, 0.2);
 }
 .explain-card {
   font-family: inherit;
@@ -496,17 +465,62 @@ a:hover {
   padding: 14px 16px 10px;
   border-radius: 6px 6px 0 0;
 }
-.explain-card .ex-title { color: #67e8f9; font-size: 11px; letter-spacing: 0.22em; }
-.explain-card .ex-heading { font-size: 10px; letter-spacing: 0.16em; color: #e2e8f0; }
+.explain-card .ex-title { color: var(--ex-title); font-size: 11px; letter-spacing: 0.22em; }
+.explain-card .ex-heading { font-size: 10px; letter-spacing: 0.16em; color: var(--ex-heading); }
 .explain-card .ex-tag { background: color-mix(in srgb, currentColor 10%, transparent); border-radius: 3px; font-size: 10px; letter-spacing: 0.05em; padding: 0 5px; }
-.explain-card .ex-scenario-sum:hover .ex-scenario-title { color: #f1f5f9; }
+.explain-card .ex-scenario-sum:hover .ex-scenario-title { color: var(--ex-strong); }
 .explain-card .ex-about { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ex-muted); }
 .explain-card .ex-about:hover { color: var(--ex-link); }
 .ex-chip-tag { background: color-mix(in srgb, currentColor 10%, transparent); }
 .big-news-row:hover { box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.22); border-radius: 3px; }
-.devi-legend-item { background: rgba(15, 23, 42, 0.4); transition: border-color 0.2s, box-shadow 0.2s; }
-.devi-legend-item:hover, .devi-legend-item:target { border-color: rgba(6, 182, 212, 0.45) !important; box-shadow: 0 0 8px rgba(0, 240, 255, 0.2); }
+.devi-legend-item { background: var(--ex-legend-bg); transition: border-color 0.2s, box-shadow 0.2s; }
+.devi-legend-item:hover, .devi-legend-item:target { border-color: var(--ex-legend-hover) !important; box-shadow: 0 0 8px var(--ex-legend-glow); }
 .devi-legend-note { border-left: 2px solid rgba(157, 77, 255, 0.55); padding-left: 10px; }
 @media (max-width: 640px) {
   .explain-card .ex-header { margin: -10px -12px 0; padding: 10px 12px 8px; }
+}
+
+/* Light theme overrides come LAST so they beat the dark defaults above (same specificity, later wins). Default stays dark neon. */
+[data-theme="light"] {
+  --devi-tara: #1d4ed8;
+  --devi-tara-2: #8a96ad;
+  --devi-kali: #2a3a8c;
+  --devi-kali-2: #c81e45;
+  --devi-bhuvaneshwari: #b07400;
+  --devi-bhuvaneshwari-2: #9d4dff;
+  --devi-tripurasundari: #be123c;
+  --devi-tripurasundari-2: #e0b84a;
+  --devi-chhinnamasta: #c2410c;
+  --devi-chhinnamasta-2: #9a8f78;
+  --devi-kamala: #be3d7f;
+  --devi-kamala-2: #ffb000;
+  --devi-bhairavi: #c21e3e;
+  --devi-bhairavi-2: #c67a3c;
+  --devi-bagalamukhi: #a88600;
+  --devi-bagalamukhi-2: #b9892b;
+  --devi-dhumavati: #55606f;
+  --devi-dhumavati-2: #8a93a3;
+  --devi-matangi: #0f8a58;
+  --devi-matangi-2: #14b8a6;
+  --ex-bg: #fbfcff;
+  --ex-fg: #0f172a;
+  --ex-muted: #475569;
+  --ex-border: rgba(29, 78, 216, 0.5);
+  --ex-rule: rgba(15, 23, 42, 0.14);
+  --ex-glow: transparent;
+  --ex-dot-on: #1d4ed8;
+  --ex-dot-off: rgba(71, 85, 105, 0.3);
+  --ex-link: #1d4ed8;
+  --ex-red: #be123c;
+  --ex-amber: #92600a;
+  --ex-violet: #6d28d9;
+  --ex-lime: #166534;
+  --ex-cyan: #0369a1;
+  --ex-mark-glow: none;
+  --ex-title: #0369a1;
+  --ex-heading: #0f172a;
+  --ex-strong: #020617;
+  --ex-legend-bg: rgba(15, 23, 42, 0.04);
+  --ex-legend-hover: rgba(29, 78, 216, 0.5);
+  --ex-legend-glow: transparent;
 }

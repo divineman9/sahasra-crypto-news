@@ -15,7 +15,7 @@ function mk(prices, extra) {
   const clock = { t: T0 };
   const calls = [];
   const dir = fs.mkdtempSync(path.join(tmp, 'e-'));
-  const e = createEngine(Object.assign({ dir, now: () => clock.t, calendarPath: '', log: () => {}, maxPerHour: 100, priceFn: async (tk) => { calls.push(tk); return typeof prices === 'function' ? prices(tk) : prices[tk] ?? null; } }, extra));
+  const e = createEngine(Object.assign({ dir, now: () => clock.t, calendarPath: '', log: () => {}, maxPerHour: 100, priceFn: async (tk) => { calls.push(tk); return typeof prices === 'function' ? prices(tk) : prices[tk] ?? null; }, priceAtFn: async (tk) => (typeof prices === 'function' ? prices(tk) : prices[tk] ?? null) }, extra));
   return { e, clock, calls, dir };
 }
 
@@ -57,12 +57,12 @@ function mk(prices, extra) {
   eq('macro event uses BTC for both prices', [mr.coin, mr.p0, mr.btc0], [null, 100, 100]);
 
   console.log('— base-rate math');
-  const rowsIn = [-5, -2, 3, -10].map((r, i) => ({ event_id: 'r' + i, category: 'unlock', subtype: 'supply_shock', status: 'done', d30: { ret_vs_btc: r } }));
+  const rowsIn = [-5, -2, 3, -10].map((r, i) => ({ event_id: 'r' + i, category: 'unlock', subtype: 'supply_shock', status: 'done', t0: '2026-09-01T00:00:00.000Z', d30: { ret_vs_btc: r } }));
   const noSeed = baseRates.rebuild({ rows: rowsIn, seed: null, now: T0 });
   eq('without seed: n / lower / median / source', [noSeed['unlock:supply_shock'].n, noSeed['unlock:supply_shock'].lower_vs_btc_d30, noSeed['unlock:supply_shock'].median_vs_btc_d30, noSeed['unlock:supply_shock'].source], [4, 3, -3.5, 'forward log']);
   const seed = { 'unlock:supply_shock': { n: 236, lower_vs_btc_d30: 171, median_vs_btc_d30: -16.3, source: 'study 2026-09' } };
   const withSeed = baseRates.rebuild({ rows: rowsIn, seed, now: T0 })['unlock:supply_shock'];
-  eq('with seed: n = seed n + log n, lower summed, n-weighted median', [withSeed.n, withSeed.lower_vs_btc_d30, withSeed.median_vs_btc_d30, withSeed.source], [240, 174, -16.1, 'study 2026-09 + forward log']);
+  eq('with seed: n = seed n + log n, lower summed, NO combined median (a weighted median is not a pooled median)', [withSeed.n, withSeed.lower_vs_btc_d30, withSeed.median_vs_btc_d30, withSeed.source], [240, 174, undefined, 'study 2026-09 + forward log']);
   eq('seed alone (empty log)', baseRates.rebuild({ rows: [], seed, now: T0 })['unlock:supply_shock'], { n: 236, lower_vs_btc_d30: 171, median_vs_btc_d30: -16.3, source: 'study 2026-09' });
   eq('open / no_price rows are not counted', baseRates.rebuild({ rows: [{ category: 'unlock', subtype: 'supply_shock', status: 'open', d30: null }], seed: null, now: T0 })['unlock:supply_shock'], undefined);
 
@@ -100,7 +100,7 @@ eq('19 rows have reached d30 (done); the 2 newest are still open', [S.e.outcomes
     // the 20th row becomes due: events 19.. were created at t0s[19]; clock is already past all of them, so fill the rest
     const filled = await S.e.outcomes.run();
     eq('remaining rows fill (2 more)', filled, 2);
-    const doneRows = S.e.outcomes.all().filter((r) => r.status === 'done');
+    const doneRows = S.e.outcomes.allWithArchive().filter((r) => r.status === 'done'); // older rows were archived by compaction
     S.e.rates.rebuildNow();
     const br = S.e.rates.get('unlock:supply_shock');
     const lowerExpected = doneRows.filter((r) => r.d30.ret_vs_btc < 0).length;
