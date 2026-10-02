@@ -12,6 +12,7 @@ import {
   Plus,
   AlertCircle,
   Bookmark,
+  Flag,
 } from "lucide-react";
 import Link from "next/link";
 import { DeviMark } from "@/components/devi";
@@ -29,6 +30,7 @@ const FILTERS: { key: FilterKey; label: string; icon: typeof LayoutList }[] = [
   { key: "bullish", label: "Bullish", icon: ArrowUpRight },
   { key: "bearish", label: "Bearish", icon: ArrowDownRight },
   { key: "saved", label: "Saved", icon: Bookmark },
+  { key: "trump", label: "Trump", icon: Flag },
 ];
 
 export function LeftSidebar() {

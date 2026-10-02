@@ -60,7 +60,8 @@ function tabWhere(tab: SourceTab): Prisma.PostWhereInput {
     case "news":
     default:
       return {
-        kind: { notIn: ["media", "social", "official", "blog", "exchange", "symbol"] },
+        // "politics" = Trump section items; they never show on coin pages.
+        kind: { notIn: ["media", "social", "official", "blog", "exchange", "symbol", "politics"] },
         NOT: { sourceName: { startsWith: "blog:" } },
       };
   }
@@ -109,6 +110,7 @@ export async function GET(
 
     const now = Date.now();
     const baseWhere: Prisma.PostWhereInput = {
+      kind: { not: "politics" }, // Trump-section items never appear on coin pages
       instruments: { some: { ticker } },
       publishedAt: {
         gte: new Date(now - RANGE_MS[range]),
