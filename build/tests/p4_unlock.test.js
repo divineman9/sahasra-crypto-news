@@ -33,8 +33,8 @@ const cls = (title, kind = 'news') => classify({ title, kind }, [...T.tagTickers
   eq('unit-less 1,655,000,000 tokens', cls('ABC token unlock: 1,655,000,000 tokens').unlockAmount, 1655000000);
   eq('symbol kind keeps importance 80', classify({ title: 'ABC token unlocks 1% supply', kind: 'symbol' }, []).importance, 80);
   console.log('— classify: regex hits / misses');
-  for (const t of ['DoubleZero to release 1.655 billion tokens', 'Vesting schedule ends for team tokens', 'ARB unlocks 113M tokens worth $50M', '16.3% of total supply unlocked', 'SUI vesting cliff Oct 2']) eq('HIT ' + t, cls(t).category, 'unlock');
-  for (const t of ['Apple unlocks new feature', 'Coinbase unlocks staking for users', 'Unlock the power of DeFi', 'Tether unlocks new blockchain support', 'Ethereum emissions fall', 'Bitcoin carbon emissions report', 'Protocol release v2 goes live', 'Release notes for v2']) eq('MISS ' + t, cls(t).category === 'unlock', false);
+  for (const t of ['DoubleZero to release 1.655 billion tokens', 'Vesting schedule ends for team tokens', 'ARB unlocks 113M tokens worth $50M', '16.3% of total supply unlocked', 'SUI vesting cliff Oct 2', 'Team unlocks 48% of circulating', '1,655,000,000 tokens unlock']) eq('HIT ' + t, cls(t).category, 'unlock');
+  for (const t of ['Apple unlocks new feature', 'Coinbase unlocks staking for users', 'Unlock the power of DeFi', 'Tether unlocks new blockchain support', 'Ethereum emissions fall', 'Bitcoin carbon emissions report', 'Protocol release v2 goes live', 'Release notes for v2', 'IMF unlocks $139 million for El Salvador, but warns of risks', 'World Bank unlocks $2 billion loan for Ukraine', 'Government unlocks $500 million in funding', 'EU unlocks €50M for farmers']) eq('MISS ' + t, cls(t).category === 'unlock', false);
 
   console.log('— classify: non-unlock unchanged');
   eq('BTC rally unchanged', cls('Bitcoin surges to record high'), { category: 'other', importance: 20, sentiment: 'bullish' });

@@ -10,6 +10,9 @@
 - Live after restart: 108 adapters, news_live.json health.ok=true (tier-1 12/12, stale none), UI 4180 up (/coin/BTC, /api/search OK). **Coverage 42/50 setup coins (84%)** (was 8/48 at 11:54 AM).
 - Startup-folder shortcut "Sahasra News Collector.lnk" added 2026-09-26 (runs start-news-hidden.vbs at login). The web UI (port 4180) is NOT auto-started.
 
+## 2026-10-02 - Unlock classifier false-positive fix (IMF loan tagged 'Big unlock')
+- classify.js: bare fiat amounts ($/EUR/GBP) no longer satisfy the unlock rule; added macro NEG terms (IMF, World Bank, loan, bailout, credit line, tranche, disbursement, funding). p4_unlock tests extended (45 pass); full suite green. Stored IMF post re-classified to other/20. Synced to public repo. Server restart pending (orchestrator).
+
 ## 2026-10-02 - P5 Phase P3 (forward log, outcomes, base rates, history) + UI theme fixes + public sync
 - Forward log: `ingest/explain/outcomes.js` -> `cache/explain/forward_log.jsonl` (append-only, last line per event_id wins). Row on a live event (p0/btc0 via Binance perp ticker; macro uses BTC; no price -> status no_price). Hourly job (inside the 10-min explain tick) fills d1/d7/d30 = coin move and move vs BTC once t0+horizon passed; done when d30 filled.
 - Base rates: `baseRates.js` -> `cache/explain/base_rates.json`; rebuilt monthly (1st, 03:00 ET, idempotent per ET month) and once on first run; merges the PRIVATE seed `cache/explain/base_rates.seed.json` (unlock:supply_shock n 236 / lower 171 / median -16.3, source "study 2026-09"; n-weighted median when the log also has rows). "Historically X of N ..." appears on the down scenario only when n >= 20, otherwise the literal "Not enough comparable cases" stays (also in the uncertain list). History = same category:subtype rows from the log (same coin first, finished rows first, max 5).
