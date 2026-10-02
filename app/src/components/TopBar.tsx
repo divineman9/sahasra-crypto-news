@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { DeviMark } from "@/components/devi";
+import { DeviMark, DEVI } from "@/components/devi";
 import { useFeedStore } from "@/store/useFeedStore";
 import { SahasraLotus } from "@/components/SahasraLotus";
 import { SearchBox } from "@/components/SearchBox";
@@ -62,10 +62,13 @@ export function TopBar() {
         </p>
         <Link
           href="/about/devis"
-          className="mt-1.5 inline-flex items-center gap-1.5 font-mono text-[10px] leading-none tracking-[0.26em] text-slate-500 hover:text-cyan-300"
+          className="ten-lenses mt-2"
+          aria-label="Ten lenses: about the ten Dasa Mahavidya inspired symbols"
+          data-testid="ten-lenses"
         >
-          <DeviMark devi="tara" size={12} tooltip={false} />
-          <span>TEN LENSES</span>
+          {DEVI.map((d, i) => (
+            <DeviMark key={d.key} devi={d.key} size={30} play replay delay={i * 150} glow named />
+          ))}
         </Link>
       </div>
 

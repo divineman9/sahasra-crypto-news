@@ -14,7 +14,7 @@ function sixWords(s: string): string {
   return w.length <= 6 ? w.join(" ") : w.slice(0, 6).join(" ") + "…";
 }
 
-// Right sidebar: today's explain events (max 5): Tara 18 px, coin, plain tag, 6-word what, time ET, evidence dots.
+// Right sidebar: today's explain events (max 5): Tara 24 px, coin, plain tag, 6-word what, time ET, evidence dots.
 export function BigNews() {
   const [events, setEvents] = useState<ExplainEvent[] | null>(null);
   useEffect(() => {
@@ -29,6 +29,7 @@ export function BigNews() {
   return (
     <section className="m-2 rounded border border-cyan-500/30 bg-slate-900/40 p-3 font-mono text-[11px] text-slate-300" aria-label="Big news today" data-testid="big-news">
       <h2 className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500">
+        <DeviMark devi="tara" size={16} tooltip={false} glow />
         Big news · today
         <Link href="/about/devis" className="ml-auto normal-case tracking-normal text-slate-600 hover:text-cyan-300" title="About the ten lenses">lenses →</Link>
       </h2>
@@ -42,7 +43,7 @@ export function BigNews() {
             return (
               <li key={e.id} className="big-news-row">
                 <Link href={`/post/${e.post_ids[0]}`} className="flex items-start gap-2 hover:bg-slate-800/60">
-                  <DeviMark devi="tara" size={18} tooltip={false} />
+                  <DeviMark devi="tara" size={24} tooltip={false} glow />
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-1.5">
                       <strong>{e.coin ? e.coin.ticker : (e.topic ?? "market").replace(/_/g, " ")}</strong>

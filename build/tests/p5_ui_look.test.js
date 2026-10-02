@@ -140,6 +140,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       eq('legend: ten anchors (#tara ... #matangi)', lg.anchors, 10);
       const home = JSON.parse(await probe(`${BASE}/`, false, "JSON.stringify({ side: [...document.querySelectorAll('nav a')].filter((a) => a.getAttribute('href') === '/about/devis').length, head: [...document.querySelectorAll('header a')].filter((a) => a.getAttribute('href') === '/about/devis').length })", 2500) || '{}');
       eq('home: Ten lenses link in the left nav and in the header', [home.side, home.head], [1, 1]);
+      const strip = JSON.parse(await probe(`${BASE}/`, false, "(() => { const s = document.querySelector('[data-testid=ten-lenses]'); const h = document.querySelector('header.sahasra-header'); const svgs = s ? [...s.querySelectorAll('svg')] : []; return JSON.stringify({ marks: svgs.length, hidden: svgs.filter((v) => v.getAttribute('aria-hidden') === 'true').length, names: s ? [...s.querySelectorAll('.devi-wrap')].map((w) => (w.title || '')) : [], w: svgs[0] ? Math.round(svgs[0].getBoundingClientRect().width) : 0, href: s ? s.getAttribute('href') : null, playing: svgs.filter((v) => v.classList.contains('is-playing')).length, hdrH: h ? Math.round(h.getBoundingClientRect().height) : 0 }); })()", 4500) || '{}');
+      check('home header: ten Devi marks, aria-hidden, ~30 px, link to /about/devis', strip.marks === 10 && strip.hidden === 10 && strip.w >= 28 && strip.w <= 32 && strip.href === '/about/devis', strip);
+      check('home header: marks have tooltips and play once on load (staggered)', strip.names.every((n, i) => /Inspired by/.test(n) && /·/.test(n.split('\n')[0])) && strip.playing >= 1, strip);
+      const stripRm = JSON.parse(await probe(`${BASE}/`, true, "JSON.stringify({ playing: document.querySelectorAll('[data-testid=ten-lenses] svg.is-playing').length, marks: document.querySelectorAll('[data-testid=ten-lenses] svg').length })", 3000) || '{}');
+      check('home header under reduced motion: 10 marks, none playing', stripRm.marks === 10 && stripRm.playing === 0, stripRm);
       const a = await pageText(`${BASE}/post/${uPost.id}`);
       check('unlock card rendered on /post/<id>', !!a.res, a.errors);
       if (a.res) {

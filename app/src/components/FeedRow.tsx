@@ -99,7 +99,7 @@ function FeedRowImpl({ story, now, savedSet }: { story: StoryView; now: number; 
               aria-label="Understand this"
               onClick={() => { if (!expanded) toggleExpanded(post.id); }}
             >
-              <DeviMark devi="tara" size={16} tooltip={false} />
+              <DeviMark devi="tara" size={18} tooltip={false} glow />
               <span className="hidden lg:inline">Understand this</span>
             </button>
           ) : null}
@@ -217,7 +217,7 @@ function FeedRowDetail({ id, story, explainId }: { id: string; story: StoryView;
     <div id={id} className="border-b border-slate-800/60 bg-slate-900/40 px-3 py-2.5 text-[11px] text-slate-300">
       {explainId ? (
         <div className="mb-2">
-          <ExplainLoader id={explainId} />
+          <ExplainLoader id={explainId} preview />
         </div>
       ) : null}
       <p className="text-slate-200">{post.title}</p>

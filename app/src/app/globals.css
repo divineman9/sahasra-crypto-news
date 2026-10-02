@@ -524,3 +524,21 @@ a:hover {
   --ex-legend-hover: rgba(29, 78, 216, 0.5);
   --ex-legend-glow: transparent;
 }
+
+/* ───────────── devi visibility: header "ten lenses" strip, glow marks, row preview ───────────── */
+.ten-lenses { display: inline-flex; align-items: center; gap: 10px; flex-wrap: nowrap; padding: 3px 10px; border: 1px solid rgba(157, 77, 255, 0.28); border-radius: 999px; background: rgba(8, 10, 24, 0.55); box-shadow: 0 0 10px rgba(157, 77, 255, 0.12); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.ten-lenses:hover { border-color: rgba(0, 240, 255, 0.55); }
+.ten-lenses:focus-visible { outline: 2px solid var(--ex-cyan, #00f0ff); outline-offset: 2px; }
+.ten-lenses::-webkit-scrollbar { display: none; }
+.devi-glow .devi { filter: drop-shadow(0 0 3px rgba(0, 240, 255, 0.55)) drop-shadow(0 0 1px rgba(183, 139, 255, 0.5)); }
+.ex-preview { margin-bottom: 8px; padding: 6px 8px; border: 1px solid rgba(0, 240, 255, 0.35); border-radius: 4px; box-shadow: 0 0 8px rgba(0, 240, 255, 0.1); background: rgba(8, 10, 24, 0.5); font-size: 11px; }
+.ex-preview-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.ex-preview-title { color: #cfe8ff; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; }
+.ex-preview-open { margin-left: auto; color: #7dd3fc; }
+.ex-preview-open:hover { color: #fff; }
+.ex-preview-list { margin: 0; padding: 0; list-style: none; color: #e2e8f0; }
+.ex-preview-list li { padding: 1px 0; }
+.ex-preview-dir { display: inline-block; width: 1.4em; color: #9aa6bd; }
+.ex-preview-tf { color: #9aa6bd; }
+.ex-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 640px) { .ten-lenses { gap: 8px; justify-content: flex-start; } }

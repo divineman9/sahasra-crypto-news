@@ -10,6 +10,9 @@
 - Live after restart: 108 adapters, news_live.json health.ok=true (tier-1 12/12, stale none), UI 4180 up (/coin/BTC, /api/search OK). **Coverage 42/50 setup coins (84%)** (was 8/48 at 11:54 AM).
 - Startup-folder shortcut "Sahasra News Collector.lnk" added 2026-09-26 (runs start-news-hidden.vbs at login). The web UI (port 4180) is NOT auto-started.
 
+## 2026-10-02 - Devi visibility on the home page (built, NOT restarted)
+- Header "Ten lenses" strip (one link to /about/devis, 10 marks at 30 px, staggered 150 ms single-play on load, replay on hover, name+lens+"Inspired by" tooltip, header only ~14 px taller); Big News items use Tara 24 px + glowing Tara in the panel header; feed "Understand this" chip Tara 18 px with glow; expanded feed rows show `ExplainPreview` (3 scenario lines + "Open card") above the card. DeviMark gained `delay`, `glow`, `named` props. Test: p5_ui_look checks 10 header marks. Screenshots: build/p5_screens/home_devis_{1366,1920}.png. Only failing suite: p5_public_sanity (classify.js / .bak_imf from the other coder). Web UI on 4180 needs a restart.
+
 ## 2026-10-02 - Unlock classifier false-positive fix (IMF loan tagged 'Big unlock')
 - classify.js: bare fiat amounts ($/EUR/GBP) no longer satisfy the unlock rule; added macro NEG terms (IMF, World Bank, loan, bailout, credit line, tranche, disbursement, funding). p4_unlock tests extended (45 pass); full suite green. Stored IMF post re-classified to other/20. Synced to public repo. Server restart pending (orchestrator).
 
