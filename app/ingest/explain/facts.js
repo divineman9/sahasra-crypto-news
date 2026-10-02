@@ -10,6 +10,10 @@ const MULT = { billion: 1e9, bn: 1e9, b: 1e9, million: 1e6, m: 1e6, thousand: 1e
 const BODY_RE = /\b(SEC|CFTC|DOJ|Federal Reserve|Fed|Treasury|White House|Senate|Congress|House|European Commission|ESMA|FCA|MAS|SFC|FSA|IRS|OCC|FDIC|Court|ECB|Bank of England)\b/;
 const FREEZE_PARTS = /(freez(?:e|es|ing)|halt(?:s|ed|ing)? (trading|withdrawals|deposits)|paus(?:e|es|ed|ing) (?:all )?(withdrawals|deposits|trading))/i;
 
+// Amounts stated in coins ("114.09 ETH", "approximately 2,000 BTC", "1.5 million USDC"): number + upper-case symbol.
+const COIN_RE = /(?<![A-Za-z0-9$.,])(\d[\d,]*(?:\.\d+)?)\s?(billion|million|thousand|bn|m|k)?\s?([A-Z][A-Z0-9]{1,9})\b/g;
+const NOT_COINS = new Set(['USD', 'US', 'UK', 'EU', 'UTC', 'ET', 'EST', 'EDT', 'PM', 'AM', 'CEO', 'CTO', 'DAO', 'TVL', 'SEC', 'DOJ', 'FBI', 'API', 'ATH', 'ETF', 'KYC', 'AML', 'NFT', 'DEX', 'CEX', 'DEFI', 'UAE', 'APY', 'APR', 'USDOLLAR', 'ID', 'OK', 'V1', 'V2', 'V3', 'V4']);
+
 const r1 = (n) => Math.round(Number(n) * 10) / 10;
 
 function titleDate(title) {
@@ -17,6 +21,21 @@ function titleDate(title) {
   if (!m) return null;
   const mon = m[1].slice(0, 3);
   return mon.charAt(0).toUpperCase() + mon.slice(1).toLowerCase() + ' ' + parseInt(m[2], 10);
+}
+
+function parseCoinAmount(title) {
+  const t = String(title || '');
+  let m;
+  COIN_RE.lastIndex = 0;
+  while ((m = COIN_RE.exec(t))) {
+    const sym = m[3];
+    if (NOT_COINS.has(sym) || /^V\d/.test(sym)) continue;
+    const n = parseFloat(m[1].replace(/,/g, ''));
+    if (!isFinite(n) || n <= 0) continue;
+    const qty = Math.round(n * (m[2] ? MULT[m[2].toLowerCase()] : 1) * 1e6) / 1e6;
+    return { qty, symbol: sym };
+  }
+  return null;
 }
 
 function parseUsd(title) {
@@ -56,7 +75,7 @@ function extractFacts(post, ctx) {
     url: post.url || null,
     published_at: isFinite(pubMs) ? new Date(pubMs).toISOString() : null,
     unlock_pct_circ: null, unlock_pct: null, unlock_pct_basis: null, unlock_tokens: null, unlock_date_et: null, unlock_days: null, per_source_pct: null,
-    amount_usd: null, exchange: capExchange(post.exchange), market: null,
+    amount_usd: null, amount_coin: null, exchange: capExchange(post.exchange), market: null,
     price_t0: null, btc_t0: null, range_24h_pct: null,
     peg_usd: null, what_paused: null, body: null, event_date_et: null,
     restrictions: [],
@@ -77,7 +96,7 @@ function extractFacts(post, ctx) {
     if (f.unlock_tokens == null && post.unlockAmount != null) f.unlock_tokens = Math.round(post.unlockAmount);
     if (f.unlock_date_et == null) f.unlock_date_et = titleDate(title);
   }
-  if (cat === 'hack') f.amount_usd = parseUsd(title);
+  if (cat === 'hack') { f.amount_usd = parseUsd(title); f.amount_coin = parseCoinAmount(title); }
   if (sub === 'depeg') f.peg_usd = 1;
   if (cat === 'listing' || cat === 'delisting') { f.market = marketType(title); f.event_date_et = titleDate(title); }
   if (cat === 'etf' || cat === 'regulatory') {
@@ -106,6 +125,8 @@ function mergeFacts(cur, nxt) {
   else if (out.unlock_pct_circ == null) { out.unlock_pct = max(cur.unlock_pct, nxt.unlock_pct); out.unlock_pct_basis = cur.unlock_pct_basis || nxt.unlock_pct_basis; }
   out.unlock_tokens = max(cur.unlock_tokens, nxt.unlock_tokens);
   out.amount_usd = max(cur.amount_usd, nxt.amount_usd);
+  const ca = cur.amount_coin, na = nxt.amount_coin;
+  out.amount_coin = ca && na && ca.symbol === na.symbol ? (na.qty > ca.qty ? na : ca) : (ca || na || null);
   for (const k of ['unlock_date_et', 'unlock_days', 'per_source_pct', 'market', 'event_date_et', 'what_paused', 'body', 'exchange', 'peg_usd']) if (out[k] == null) out[k] = nxt[k];
   const better = nxt.source_tier < cur.source_tier || (nxt.source_tier === cur.source_tier && Date.parse(nxt.published_at) > Date.parse(cur.published_at));
   if (better) for (const k of ['headline', 'source', 'source_tier', 'kind', 'url', 'published_at']) out[k] = nxt[k];
@@ -115,4 +136,4 @@ function mergeFacts(cur, nxt) {
   return out;
 }
 
-module.exports = { extractFacts, mergeFacts, titleDate, parseUsd };
+module.exports = { extractFacts, mergeFacts, titleDate, parseUsd, parseCoinAmount };

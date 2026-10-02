@@ -18,7 +18,8 @@
 - makePriceFn: 1000/1M-prefixed contracts normalised (PEPE == 1000PEPE, price per token), instrument persisted (`instr`, `btc_instr`) and re-asked by name; polite 250 ms gap.
 - Forward log: mtime/size cache, completed rows older than 60 days moved to `forward_log.archive.YYYY-MM.jsonl` (daily compaction, `allWithArchive()` feeds base rates + history), run() single-flight, record() per-event single-flight.
 - baseRates.js: no combined median (seed + log); finite/date/integer/0<=lower<=n validation; minimum 20 enforced in rebuild, get() and Scenarios.tsx. events.js: tick() refreshes live cards after a monthly rebuild, stale/disqualified rates cleared (literal restored), history = COMPLETED cases only (same coin first). globals.css: light tokens last, theme tokens for title/heading/legend; dark stays default.
-- Tests: p5_outcomes_review (56) added; p5_outcomes 35. Full suite: all PASS except p5_public_sanity (2 FAIL, caused by the other coder's classify.js work, not this round).
+- Hack facts: losses stated in coins ("114.09 ETH", "2,000 BTC") are parsed into `facts.amount_coin {qty, symbol}`; templates say "about 114.09 ETH" (USD figure wins when both exist; merge keeps the larger quantity of the same coin).
+- Tests: p5_outcomes_review (62) added; p5_outcomes 35. Full suite: all PASS except p5_public_sanity (2 FAIL, caused by the other coder's classify.js work, not this round).
 
 ## 2026-10-02 - P5 Phase P3 (forward log, outcomes, base rates, history) + UI theme fixes + public sync
 - Forward log: `ingest/explain/outcomes.js` -> `cache/explain/forward_log.jsonl` (append-only, last line per event_id wins). Row on a live event (p0/btc0 via Binance perp ticker; macro uses BTC; no price -> status no_price). Hourly job (inside the 10-min explain tick) fills d1/d7/d30 = coin move and move vs BTC once t0+horizon passed; done when d30 filled.

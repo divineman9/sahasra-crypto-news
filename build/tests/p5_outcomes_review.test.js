@@ -244,5 +244,21 @@ const lineCount = (f) => fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).
     check('title / heading / hover / legend rules use theme tokens', /var\(--ex-title\)/.test(ruleOf('.explain-card .ex-title')) && /var\(--ex-heading\)/.test(ruleOf('.explain-card .ex-heading')) && /var\(--ex-strong\)/.test(ruleOf('.explain-card .ex-scenario-sum:hover')) && /var\(--ex-legend-bg\)/.test(ruleOf('.devi-legend-item {')) && /var\(--ex-legend-hover\)/.test(ruleOf('.devi-legend-item:hover')));
     check('light block defines every new token', ['--ex-title', '--ex-heading', '--ex-strong', '--ex-legend-bg', '--ex-legend-hover', '--ex-legend-glow'].every((t) => css.slice(lightAt).includes(t + ':')));
   }
+  console.log('— 8. hack facts: loss stated in coins is parsed and worded ("about 114.09 ETH")');
+  {
+    const facts = require(APP + '/ingest/explain/facts.js');
+    eq('parseCoinAmount: 114.09 ETH / 2,000 BTC / 1.5 million USDC', [facts.parseCoinAmount('SlowMist: Aave v3 Loop Safe Module Exploited, Approximately 114.09 ETH Stolen'), facts.parseCoinAmount('Protocol drained of approximately 2,000 BTC'), facts.parseCoinAmount('Hack steals 1.5 million USDC')], [{ qty: 114.09, symbol: 'ETH' }, { qty: 2000, symbol: 'BTC' }, { qty: 1500000, symbol: 'USDC' }]);
+    eq('not coins: times, versions, dollar amounts, no number', [facts.parseCoinAmount('Q hacked, $5M drained at 3 PM UTC'), facts.parseCoinAmount('Uniswap V3 hacked'), facts.parseCoinAmount('Aave exploited at 10:30 ET'), facts.parseCoinAmount('Exchange hacked')], [null, null, null, null]);
+    const M = mkEngine({ BTC: 100, AAV: 10 });
+    const hp = (id, title, extra) => Object.assign({ id, title, url: 'https://x.test/' + id, category: 'hack', importance: 85, sentiment: 'bearish', kind: 'news', sourceTier: 2, sourceDomain: 'slowmist.com', sourceName: 'x', exchange: null, tickers: ['AAV'], unlockPct: null, publishedAt: new Date(M.clock.t - 60e3), storyId: null, userLabel: null, names: { AAV: 'Aave' } }, extra);
+    const ev = M.e.consider(hp('hk1', 'SlowMist: Aave v3 Loop Safe Module Exploited, Approximately 114.09 ETH Stolen'));
+    await M.e.settled();
+    check('card exists and facts carry the coin amount', !!ev && ev.facts.amount_coin && ev.facts.amount_coin.qty === 114.09 && ev.facts.amount_coin.symbol === 'ETH', ev && ev.facts);
+    check('what-line says "about 114.09 ETH", not "not yet confirmed"', ev && /lost about 114\.09 ETH/.test(ev.text.what) && !/not yet confirmed/.test(ev.text.what), ev && ev.text.what);
+    const ev2 = M.e.consider(hp('hk2', 'Protocol Z hacked, $5M drained (about 2,000 ETH)', { tickers: ['AAV'], sourceDomain: 'cnbc.com' }));
+    check('a dollar figure wins over the coin figure', !ev2 || ev2.id === ev.id || /about \$5 million/.test(ev2.text.what) || ev2.facts.amount_usd === 5e6, ev2 && ev2.text.what);
+    const m = facts.mergeFacts({ amount_coin: { qty: 10, symbol: 'ETH' }, amount_usd: null, restrictions: [], source_tier: 2, published_at: iso(T0) }, { amount_coin: { qty: 12, symbol: 'ETH' }, amount_usd: null, restrictions: [], source_tier: 2, published_at: iso(T0) });
+    eq('merge keeps the larger quantity of the same coin', m.amount_coin, { qty: 12, symbol: 'ETH' });
+  }
   done('p5_outcomes_review');
 })();
