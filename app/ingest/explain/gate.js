@@ -91,9 +91,9 @@ function evaluate(post, opts = {}) {
     return out('hack', 'depeg', 'depeg flag', { topic: ticker ? null : 'depeg_' + (slug(post.exchange) || String(post.id || '').slice(0, 8)) });
   }
   const cat = post.category;
-  if (cat === 'hack' && (tier <= 2 || OFFICIAL_KINDS.has(kind))) {
+  if (cat === 'hack' && (tier <= 2 || OFFICIAL_KINDS.has(kind) || (tier <= 3 && post.importance >= 80))) {
     const sub = flags.freeze && !THEFT_RE.test(title) ? 'halt' : THEFT_RE.test(title) ? 'theft' : 'exploit';
-    return out('hack', sub, 'hack from tier<=2 or exchange/official source', { topic: ticker ? null : 'hack_' + (slug(post.exchange) || String(post.id || '').slice(0, 8)) });
+    return out('hack', sub, 'hack from tier<=2, exchange/official, or tier-3 importance>=80', { topic: ticker ? null : 'hack_' + (slug(post.exchange) || String(post.id || '').slice(0, 8)) });
   }
   if (flags.freeze && trusted && cat !== 'maintenance') {
     const c = cat === 'hack' || cat === 'regulatory' ? cat : 'hack';
