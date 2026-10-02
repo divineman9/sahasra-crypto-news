@@ -7,7 +7,7 @@ export function Kali({ size = 64, play = false, className }: DeviProps) {
   return (
     <DeviSvg name="kali" size={size} play={play} className={className} title="Kali">
       <circle className="devi-kali-ring" cx="32" cy="32" r="28" opacity={0.45} />
-      <path className="devi-kali-arc" d={arcPath(32, 32, 20, -15, 300)} style={accent("kali")} />
+      <path className="devi-kali-arc" pathLength={1} d={arcPath(32, 32, 20, -15, 300)} style={accent("kali")} />
       <path className="devi-kali-shadow" d="M24 36 L27 28 L30 38 L33 27 L36 37 L40 30" opacity={0.2} />
       <g className="devi-kali-dots">
         {dots.map(([x, y], i) => (

@@ -8,7 +8,7 @@ export function Bhuvaneshwari({ size = 64, play = false, className }: DeviProps)
     <DeviSvg name="bhuvaneshwari" size={size} play={play} className={className} title="Bhuvaneshwari">
       <g className="devi-bhuvaneshwari-arcs">
         {arcs.map((r, i) => (
-          <path key={r} className={`devi-bhuvaneshwari-arc${i + 1}`} d={`M${32 - r} 54 A${r} ${r} 0 0 1 ${32 + r} 54`} opacity={1 - i * 0.2} />
+          <path key={r} className={`devi-bhuvaneshwari-arc devi-bhuvaneshwari-arc${i + 1}`} pathLength={1} d={`M${32 - r} 54 A${r} ${r} 0 0 1 ${32 + r} 54`} opacity={1 - i * 0.2} />
         ))}
       </g>
       <ellipse className="devi-bhuvaneshwari-oval" cx="32" cy="15.5" rx="11.5" ry="7" style={accent("bhuvaneshwari")} />

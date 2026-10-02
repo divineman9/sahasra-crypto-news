@@ -54,6 +54,9 @@ const COMPANY_LISTING_PHRASES = [
 const DEPEG_RE = /\b(depeg(s|ged)?|loses? (its )?peg|lost (its )?peg|below \$?0\.9\d)/i;
 const FREEZE_RE = /\b(freez(e|es|ing)|halt(s|ed|ing)? (trading|withdrawals|deposits)|paus(e|es|ed|ing) (all )?(withdrawals|deposits|trading))\b/i;
 
+// P5 P2: a freeze/halt headline with hack-like context is a security event, not routine maintenance.
+const HACKCTX_RE = /\b(suspicious|outflows?|exploit(ed|s)?|drained|stolen|hack(ed|ers?)?|breach(ed)?|compromised|attacker)\b/i;
+
 const NEG_RE = /\b(not|no|never|refuses? to|refused to|declines? to|declined to|won't|will not|fails? to|failed to|yet to|has not|hasn't|have not|haven't|denies|denied)\b/i;
 
 const ALPHA_LISTING_RE = /doesn'?t mean official listing|not an official listing|alpha listing/i;
@@ -188,6 +191,8 @@ function classify(raw, tickers) {
   if (ALPHA_LISTING_RE.test(title) && (category === 'listing' || category === 'other' || category == null)) {
     return withCap(raw, { category: 'other', importance: 30, sentiment: 'neutral' });
   }
+
+  if ((category === 'maintenance' || category === 'other') && FREEZE_RE.test(title) && HACKCTX_RE.test(title)) category = 'hack';
 
   let isPromo = false;
   if (kind === 'exchange' && PROMO_RE.test(title) && !PROMO_EXCEPTION_RE.test(title)) {

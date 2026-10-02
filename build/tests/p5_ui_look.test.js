@@ -30,13 +30,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   const { createEngine } = require(APP + '/ingest/explain/events.js');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'p5ui-'));
-  const engine = createEngine({ dir, calendarPath: '', log: () => {} });
+  const engine = createEngine({ dir, calendarPath: '', log: () => {}, fetchHeat: async () => ({ range_24h_pct: 11.2 }) });
   const now = new Date();
   const mk = (o) => Object.assign({ id: crypto.randomUUID(), title: 't', url: URL_PREFIX + crypto.randomUUID(), category: 'other', importance: 80, sentiment: 'bearish', kind: 'news', sourceTier: 2, sourceDomain: 'theblock.co', sourceName: 'rss:theblock', exchange: null, tickers: ['STO'], flags: null, publishedAt: new Date(now.getTime() - 120e3), storyId: null, userLabel: null }, o);
   const uPost = mk({ title: 'StakeStone (STO) unlocks 21,351,728 tokens, 5.1% of circulating supply, on Oct 2', category: 'unlock', unlockPct: 5.1, unlockPctBasis: 'circulating', unlockAmount: 21351728 });
   const hPost = mk({ title: 'Exchange halts withdrawals after incident', category: 'other', flags: { depeg: false, freeze: true }, tickers: ['HLT'], exchange: 'Bybit', sourceTier: 2 });
   const eU = engine.consider(uPost);
   const eH = engine.consider(hPost);
+  await engine.settled();
+  const uPost2 = mk({ title: 'StakeStone STO unlock now 5.4% of circulating supply', category: 'unlock', unlockPct: 5.4, unlockPctBasis: 'circulating', sourceDomain: 'coindesk.com' });
+  engine.consider(uPost2); // merges into the unlock card -> rev 2 + what-changed line
   const raw = JSON.parse(fs.readFileSync(path.join(dir, 'events.json'), 'utf8'));
   raw[0].heat.private = { funding_1h: 0.08, oi_chg_24h: 31 }; // must be stripped by default
   fs.writeFileSync(path.join(dir, 'events.json'), JSON.stringify(raw));
@@ -49,7 +52,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const stopEdge = () => { spawnSync('powershell', ['-NoProfile', '-Command', `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match '--remote-debugging-port=${CDP_PORT}' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`], { stdio: 'ignore' }); };
   try {
     await cleanup();
-    for (const [p, e] of [[uPost, eU], [hPost, eH]]) {
+    for (const [p, e] of [[uPost, eU], [uPost2, eU], [hPost, eH]]) {
       await prisma.post.create({ data: { id: p.id, title: p.title, url: p.url, sourceDomain: 'theblock.co', sourceName: 'rss:theblock', sourceTier: 2, kind: 'news', sentiment: 'bearish', category: p.category, importance: 80, publishedAt: p.publishedAt, firstSeenAt: p.publishedAt } });
     }
     try { await httpGet(`${BASE}/api/explain?limit=1`); throw new Error(`port ${PORT} already in use: stop the leftover server first`); } catch (e) { if (/already in use/.test(e.message)) throw e; }
@@ -97,13 +100,36 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         let res = null;
         for (let i = 0; i < 60; i++) {
           await sleep(500);
-          const r = await send('Runtime.evaluate', { returnByValue: true, expression: `(() => { const c = document.querySelector('.explain-card'); if (!c) return null; const q = (s) => [...c.querySelectorAll(s)]; return JSON.stringify({ title: c.querySelector('.ex-title')?.textContent, lens: q('h3[data-lens]').map((h) => h.dataset.lens), headings: q('h3').map((h) => h.textContent.trim()), svgs: q('svg').length, hiddenSvgs: q('svg[aria-hidden="true"]').length, text: c.innerText, footer: c.querySelector('.ex-footer')?.textContent, scen: q('details').length, tags: q('.ex-tag').map((t) => t.textContent), clipped: q('svg').filter((s) => s.getBoundingClientRect().width < 15).length }); })()` });
+          const r = await send('Runtime.evaluate', { returnByValue: true, expression: `(() => { const c = document.querySelector('.explain-card'); if (!c) return null; const q = (s) => [...c.querySelectorAll(s)]; return JSON.stringify({ title: c.querySelector('.ex-title')?.textContent, lens: q('h3[data-lens]').map((h) => h.dataset.lens), headings: q('h3').map((h) => h.textContent.trim()), svgs: q('svg').length, hiddenSvgs: q('svg[aria-hidden="true"]').length, text: c.innerText, footer: c.querySelector('.ex-footer')?.textContent, scen: q('details').length, tags: q('.ex-tag').map((t) => t.textContent), clipped: q('svg').filter((s) => s.getBoundingClientRect().width < 15).length, gloss: q('.ex-gloss').length, glossDef: q('.ex-gloss').every((g) => (g.getAttribute('data-def') || '').length > 10 && g.tabIndex === 0) }); })()` });
           if (r.result && r.result.result && r.result.result.value) { res = JSON.parse(r.result.result.value); break; }
         }
         if (!res) { const r = await send('Runtime.evaluate', { returnByValue: true, expression: 'document.body.innerText.slice(0,500)' }); errors.push('BODY: ' + JSON.stringify(r.result && r.result.result && r.result.result.value)); }
         ws.close(); await httpGet(`http://127.0.0.1:${CDP_PORT}/json/close/${t.body.id}`).catch(() => {});
         return { res, errors };
       }
+      async function probe(url, reduced, expr, waitMs) {
+        const t = await httpGet(`http://127.0.0.1:${CDP_PORT}/json/new?about:blank`, 'PUT');
+        const ws = new WebSocket(t.body.webSocketDebuggerUrl);
+        await new Promise((r, j) => { ws.on('open', r); ws.on('error', j); });
+        let id = 0; const pend = new Map();
+        ws.on('message', (m) => { const j = JSON.parse(m); if (j.id && pend.has(j.id)) { pend.get(j.id)(j); pend.delete(j.id); } });
+        const send = (method, params = {}) => new Promise((r) => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
+        await send('Runtime.enable'); await send('Page.enable');
+        await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: reduced ? 'reduce' : 'no-preference' }] });
+        await send('Page.navigate', { url });
+        await sleep(waitMs);
+        const r = await send('Runtime.evaluate', { returnByValue: true, awaitPromise: true, expression: expr });
+        ws.close(); await httpGet(`http://127.0.0.1:${CDP_PORT}/json/close/${t.body.id}`).catch(() => {});
+        return r.result && r.result.result && r.result.result.value;
+      }
+      const MOTION = "(() => { const c = document.querySelector('.explain-card'); const hdr = c && c.querySelector('.ex-header-mark svg'); return JSON.stringify({ playing: document.querySelectorAll('.explain-card .devi.is-playing').length, headerPlaying: !!(hdr && hdr.classList.contains('is-playing')), anims: hdr ? hdr.getAnimations({ subtree: true }).length : -1, running: hdr ? hdr.getAnimations({ subtree: true }).filter((x) => x.playState === 'running').length : -1 }); })()";
+      const m1 = JSON.parse(await probe(`${BASE}/post/${uPost.id}`, false, MOTION, 4500) || '{}');
+      check('motion: header mark plays once when visible (is-playing + animations created)', m1.headerPlaying === true && m1.anims >= 1, m1);
+      check('motion: every animation has finished after 4.5 s (final frame held, no idle loop)', m1.running === 0, m1);
+      const m2 = JSON.parse(await probe(`${BASE}/post/${uPost.id}`, true, MOTION, 3000) || '{}');
+      check('reduced motion: no is-playing class and no animations (static frames)', m2.playing === 0 && m2.anims === 0, m2);
+      const side = JSON.parse(await probe(`${BASE}/`, false, "new Promise((r) => { let n = 0; const iv = setInterval(() => { const rows = document.querySelectorAll('[data-testid=big-news] .big-news-row'); if (rows.length >= 2 || ++n > 40) { clearInterval(iv); r(JSON.stringify({ rows: rows.length, text: document.querySelector('[data-testid=big-news]')?.innerText || '', svgs: document.querySelectorAll('[data-testid=big-news] svg[aria-hidden=true]').length })); } }, 500); })", 1500) || '{}');
+      check('sidebar: Big news lists today\'s events (max 5) with Tara marks, tags and ET times', side.rows === 2 && side.svgs >= 2 && /Unlock/i.test(side.text) && / (AM|PM) ET/.test(side.text), side);
       const a = await pageText(`${BASE}/post/${uPost.id}`);
       check('unlock card rendered on /post/<id>', !!a.res, a.errors);
       if (a.res) {
@@ -113,8 +139,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         check('all marks are aria-hidden svgs', a.res.svgs >= 9 && a.res.svgs === a.res.hiddenSvgs, [a.res.svgs, a.res.hiddenSvgs]);
         check('footer disclaimer', /Not advice\. Nothing here says buy or sell\./.test(a.res.footer || ''), a.res.footer);
         check('times in ET', /\b(AM|PM) ET\b/.test(a.res.text) && !/\bUTC\b/.test(a.res.text), a.res.text.slice(0, 300));
-        check('what-text from facts', /about 5\.1% more STO coins/.test(a.res.text), a.res.text.slice(0, 400));
+        check('what-text from facts', /about 5\.4% more STO coins/.test(a.res.text), a.res.text.slice(0, 400));
         eq('3 scenarios', a.res.scen, 3);
+        check('glossary terms rendered with definitions (hover/focus)', a.res.gloss >= 2 && a.res.glossDef, [a.res.gloss, a.res.glossDef]);
+        check('heat badge: Volatility: high', /Volatility: high/.test(a.res.text), a.res.text.slice(0, 300));
+        check('private funding/OI line hidden by default', !/Funding rate|Open interest/.test(a.res.text));
+        check('what-changed line after a merge', /What changed: Rev 2: unlock size now 5\.4% \(was 5\.1%\)/.test(a.res.text), a.res.text.slice(0, 400));
         eq('Unlock tag', a.res.tags, ['Unlock']);
       }
       check('no JS errors on the post page', a.errors.length === 0, a.errors);

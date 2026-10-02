@@ -11,7 +11,9 @@ export function Kamala({ size = 64, play = false, className }: DeviProps) {
       ))}
       <g className="devi-kamala-lotus">
         {[-50, -25, 0, 25, 50].map((d) => (
-          <Petal key={d} cls="devi-kamala-petal" len={15} hw={3.6} at={[32, 45]} rot={d} fillTint />
+          <g key={d} className="devi-kamala-p" style={{ ["--r" as string]: `${d < 0 ? -25 : d > 0 ? 25 : 0}deg` }}>
+            <Petal cls="devi-kamala-petal" len={15} hw={3.6} at={[32, 45]} rot={d} fillTint />
+          </g>
         ))}
       </g>
       <g className="devi-kamala-showers" style={accent("kamala")}>

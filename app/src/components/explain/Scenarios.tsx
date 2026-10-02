@@ -1,4 +1,5 @@
 import type { ExplainScenario } from "@/lib/explainTypes";
+import { Gloss } from "./GlossaryTerm";
 
 const GLYPH: Record<ExplainScenario["dir"], { g: string; word: string }> = {
   down: { g: "▼", word: "Lower" },
@@ -19,8 +20,8 @@ export function Scenarios({ scenarios, note }: { scenarios: ExplainScenario[]; n
             <span className="ex-muted"> · {s.timeframe}</span>
           </summary>
           <div className="ex-scenario-body">
-            <p><span className="ex-muted">Condition:</span> {s.condition}</p>
-            <p><span className="ex-muted">We would know because:</span> {s.evidence}</p>
+            <p><span className="ex-muted">Condition:</span> <Gloss text={s.condition} /></p>
+            <p><span className="ex-muted">We would know because:</span> <Gloss text={s.evidence} /></p>
             {s.base_rate ? (
               <p className="ex-base">Historically {s.base_rate.x} of {s.base_rate.n} {s.base_rate.measure}.</p>
             ) : i === 0 && note ? (

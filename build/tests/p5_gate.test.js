@@ -69,6 +69,20 @@ eq('freeze flag from tier-4 news fails', gate.evaluate(P({ category: 'other', so
   check('merge prefers a circulating pct over total', m.facts.unlock_pct_circ === 6 && m.facts.unlock_pct_basis === 'circulating' && /about 6% more 2Z coins/.test(m.text.what), m.facts);
 }
 
+console.log('— classify routing: freeze + hack-like context -> hack');
+{
+  const cl = (title, kind = 'exchange') => classify({ title, kind }, []);
+  const b = cl('Bybit halts withdrawals after suspicious outflows');
+  eq('Bybit halts withdrawals after suspicious outflows -> hack', [b.category, b.flags.freeze], ['hack', true]);
+  const g = gate.evaluate(P({ title: 'Bybit halts withdrawals after suspicious outflows', category: b.category, importance: b.importance, kind: 'exchange', sourceTier: 1, exchange: 'Bybit', flags: b.flags, tickers: [] }), { now: NOW });
+  eq('...and reaches the halt gate (tier-1 exchange)', [g.pass, g.subtype, g.category], [true, 'halt', 'hack']);
+  eq('genuine maintenance stays maintenance', cl('Binance pauses withdrawals on Solana network for wallet maintenance').category, 'maintenance');
+  eq('scheduled maintenance stays maintenance', cl('Exchange pauses deposits for scheduled maintenance').category, 'maintenance');
+  eq('drained + paused -> hack', cl('Protocol drained, withdrawals paused after exploit', 'news').category, 'hack');
+  eq('stolen + freeze -> theft subtype wins over halt', gate.evaluate(P({ title: 'Exchange halts withdrawals after $20M stolen', category: 'hack', kind: 'exchange', sourceTier: 1, flags: { depeg: false, freeze: true } }), { now: NOW }).subtype, 'theft');
+  eq('halt without hack context in a plain hack story keeps exploit', gate.evaluate(P({ title: 'Lending app oracle exploit hits pools', category: 'hack' }), { now: NOW }).subtype, 'exploit');
+  eq('no freeze flag: ordinary headlines unchanged', cl('Bitcoin surges to record high', 'news').category, 'other');
+}
 console.log('— gate: never pass');
 for (const cat of ['maintenance', 'other']) eq(cat + ' never passes', ev({ category: cat, importance: 90 }).pass, false);
 eq('dismiss never passes', ev({ category: 'unlock', unlockPct: 9, unlockPctBasis: 'circulating', userLabel: 'dismiss' }).pass, false);

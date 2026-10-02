@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DEVI } from "@/components/devi";
+import { DEVI, DeviMark } from "@/components/devi";
 
 export const metadata = { title: "The ten lenses | Sahasra" };
 
@@ -16,8 +16,8 @@ export default function DevisPage() {
       <ul className="mt-4 grid gap-3 sm:grid-cols-2" data-testid="devi-list">
         {DEVI.map((d) => (
           <li key={d.key} className="devi-legend-item flex gap-3 rounded border p-3" data-devi={d.key} style={{ borderColor: "var(--ex-rule)" }}>
-            <span className="shrink-0" title={`${d.tooltip}\n${d.meaning}`}>
-              <d.Component size={64} />
+            <span className="shrink-0">
+              <DeviMark devi={d.key} size={64} play replay />
             </span>
             <div className="min-w-0">
               <h2 className="font-sans text-sm font-semibold">

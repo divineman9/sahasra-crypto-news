@@ -11,6 +11,8 @@ import { Uncertain } from "./Uncertain";
 import { EvidenceMeter } from "./EvidenceMeter";
 import { PastCases } from "./PastCases";
 import { TermsAndVoices } from "./TermsAndVoices";
+import { HeatBadge } from "./HeatBadge";
+import { Gloss } from "./GlossaryTerm";
 
 // "Understand this" card (P5). Text first; Devi marks are decorative lenses. Times in ET.
 export function ExplainCard({ event, play = false }: { event: ExplainEvent; play?: boolean }) {
@@ -32,17 +34,19 @@ export function ExplainCard({ event, play = false }: { event: ExplainEvent; play
             <span className="ex-muted">{etFull(event.created_at)}</span>
             <span className="ex-muted">Updated {etClock(event.updated_at)} · rev {event.rev}</span>
           </div>
+          <HeatBadge heat={event.heat} />
+          {event.last_change ? <p className="ex-change" data-testid="ex-change"><span className="ex-muted">What changed:</span> {event.last_change.text}</p> : null}
         </div>
       </header>
 
       <div className="ex-rule" />
       <section className="ex-section" data-section="what">
         <SectionHeading devi="kali" play={play} />
-        <p className="ex-body">{t.what}</p>
+        <p className="ex-body"><Gloss text={t.what} showPrivate={!!event.heat.private} /></p>
       </section>
       <section className="ex-section" data-section="why">
         <SectionHeading devi="bhuvaneshwari" play={play} />
-        <p className="ex-body">{t.why}</p>
+        <p className="ex-body"><Gloss text={t.why} /></p>
       </section>
 
       <div className="ex-rule" />

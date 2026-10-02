@@ -1,6 +1,8 @@
 import type { ExplainEvent } from "@/lib/explainTypes";
 import { etClock } from "@/lib/timeET";
 import { SectionHeading } from "./SectionHeading";
+import { GlossaryTerm } from "./GlossaryTerm";
+import { glossaryFor } from "@/lib/glossary";
 
 // Matangi lens: the terms used in the card (plain list; hover definitions come later) and the timeline of voices.
 export function TermsAndVoices({ glossary, timeline, play }: { glossary: string[]; timeline: ExplainEvent["timeline"]; play?: boolean }) {
@@ -9,9 +11,15 @@ export function TermsAndVoices({ glossary, timeline, play }: { glossary: string[
       <SectionHeading devi="matangi" play={play} />
       {glossary.length > 0 ? (
         <p className="ex-body">
-          {glossary.map((g, i) => (
-            <span key={g} className="ex-term">{g}{i < glossary.length - 1 ? " · " : ""}</span>
-          ))}
+          {glossary.map((g, i) => {
+            const e = glossaryFor(g, false);
+            return (
+              <span key={g} className="ex-term">
+                {e ? <GlossaryTerm entry={e}>{g}</GlossaryTerm> : g}
+                {i < glossary.length - 1 ? " · " : ""}
+              </span>
+            );
+          })}
         </p>
       ) : null}
       <ol className="ex-timeline">

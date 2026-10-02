@@ -7,4 +7,6 @@ const ms = (v: string | number): number => (typeof v === "number" ? v : Date.par
 
 export const etShort = (v: string | number): string => fShort.format(ms(v));
 export const etClock = (v: string | number): string => fClock.format(ms(v)).replace(/ /g, " ") + " ET";
+const fDay = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+export const etDay = (v: string | number): string => fDay.format(ms(v));
 export const etFull = (v: string | number): string => `${etShort(v)}, ${etClock(v)}`;

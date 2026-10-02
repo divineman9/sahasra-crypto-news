@@ -75,7 +75,8 @@ export interface ExplainEvent {
     glm: unknown;
   };
   evidence: ExplainEvidence;
-  heat: { level: "high" | "normal" | null; range_24h_pct: number | null; private: unknown };
+  heat: { level: "high" | "normal" | null; range_24h_pct: number | null; private: { funding_1h: number | null; oi_chg_24h: number | null } | null; checked_at?: string };
+  last_change?: { rev: number; at: string; text: string } | null;
   history: { cases: ExplainHistoryCase[]; note: string | null };
   timeline: ExplainTimelineRow[];
   post_ids: string[];

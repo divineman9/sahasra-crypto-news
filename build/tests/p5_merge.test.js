@@ -14,6 +14,7 @@ const P = (o) => Object.assign({ id: 'm' + ++n, title: 't', category: 'unlock', 
 console.log('— attach by storyId / same key');
 const a = e.consider(P({ title: 'STO unlocks 5.1% of circulating supply Oct 2', sourceTier: 3 }));
 eq('created rev 1 with one timeline row', [a.rev, a.timeline.length, a.timeline[0].kind], [1, 1, 'first']);
+eq('first event has no what-changed line', a.last_change, null);
 clock.t += 3600e3;
 const b = e.consider(P({ title: 'StakeStone STO unlock: 5.4% of circulating supply on Oct 2', unlockPct: 5.4, sourceTier: 2, sourceDomain: 'theblock.co', storyId: 's-1', publishedAt: new Date(clock.t - 1000) }));
 check('same event attached, no 2nd card', b.id === a.id && e._events().length === 1, e._events().length);
@@ -24,6 +25,7 @@ eq('headline from highest-tier source', [b.facts.source, b.facts.source_tier], [
 check('updated_at moved', Date.parse(b.updated_at) > Date.parse(b.created_at), b.updated_at);
 eq('duplicate post id is a no-op', e.consider(Object.assign({}, P({ title: 'STO unlock again' }), { id: b.post_ids[1] })).rev, 2);
 
+eq('what-changed line on merge (rev, numbers from facts only)', [b.last_change.rev, b.last_change.text], [2, 'Rev 2: unlock size now 5.4% (was 5.1%).']);
 console.log('— attach by storyId when the ticker differs');
 const viaStory = e.consider(P({ title: 'Unlock coverage without ticker', tickers: ['STO'], storyId: 's-1', unlockPct: 5.2 }));
 eq('merged (still one event)', [viaStory.id === a.id, e._events().length], [true, 1]);

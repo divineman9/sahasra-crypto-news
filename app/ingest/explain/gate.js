@@ -80,7 +80,7 @@ function evaluate(post, opts = {}) {
   }
   const cat = post.category;
   if (cat === 'hack' && (tier <= 2 || OFFICIAL_KINDS.has(kind))) {
-    const sub = THEFT_RE.test(title) ? 'theft' : 'exploit';
+    const sub = flags.freeze && !THEFT_RE.test(title) ? 'halt' : THEFT_RE.test(title) ? 'theft' : 'exploit';
     return out('hack', sub, 'hack from tier<=2 or exchange/official source', { topic: ticker ? null : 'hack_' + (slug(post.exchange) || String(post.id || '').slice(0, 8)) });
   }
   if (flags.freeze && trusted && cat !== 'maintenance') {

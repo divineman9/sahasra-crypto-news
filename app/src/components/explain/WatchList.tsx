@@ -1,4 +1,5 @@
 import { SectionHeading } from "./SectionHeading";
+import { Gloss } from "./GlossaryTerm";
 
 export function WatchList({ items, play }: { items: { label: string; detail: string }[]; play?: boolean }) {
   return (
@@ -7,7 +8,7 @@ export function WatchList({ items, play }: { items: { label: string; detail: str
       <ul className="ex-list">
         {items.map((w, i) => (
           <li key={i}>
-            {w.label} <span className="ex-muted">· {w.detail}</span>
+            <Gloss text={w.label} /> <span className="ex-muted">· <Gloss text={w.detail} /></span>
           </li>
         ))}
       </ul>

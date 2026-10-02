@@ -7,6 +7,8 @@ const gate = require('./gate');
 const { extractFacts, mergeFacts } = require('./facts');
 const templates = require('./templates');
 const evidence = require('./evidence');
+const { createRewriter } = require('./rewrite');
+const heatLib = require('./heat');
 const { etDay } = require('./timeET');
 const { NEG_RE } = require('../classify');
 
@@ -45,6 +47,11 @@ function createEngine(opts = {}) {
   const maxPerHour = opts.maxPerHour || MAX_PER_HOUR;
   const log = opts.log || ((m) => console.log(m));
   let events = null;
+  const rewriter = opts.rewriteCmd ? createRewriter({ dir, cmd: opts.rewriteCmd, dailyMax: opts.rewriteDailyMax || 20, now: nowFn, timeoutMs: opts.rewriteTimeoutMs || 20000, log }) : null;
+  const fetchHeat = opts.fetchHeat || null; // (ticker) -> {range_24h_pct, funding, oi_chg_24h}
+  const privHeat = !!opts.privateHeat;
+  const pending = new Set();
+  const bg = (p) => { const q = p.catch((e) => log('[explain] background error: ' + (e && e.message || e))).then(() => { pending.delete(q); }); pending.add(q); return q; };
 
   function load() {
     if (events) return events;
@@ -63,6 +70,33 @@ function createEngine(opts = {}) {
     ev.glossary = ev.text.glossary || [];
     delete ev.text.glossary;
     ev.evidence = evidence.compute(ev.timeline, ev.facts);
+    if (rewriter) rewriter.applyCached(ev);
+  }
+
+  async function refreshHeat(ev) {
+    if (!fetchHeat || !ev.coin) return;
+    const m = await fetchHeat(ev.coin.ticker);
+    ev.heat = heatLib.toHeat(m || {}, privHeat, new Date(nowFn()).toISOString());
+    save();
+  }
+
+  // Background work after a create/merge: GLM rewrite (if configured) and heat lookup (if configured).
+  function afterChange(ev) {
+    if (rewriter && ev.text.source !== 'glm') bg(rewriter.run(ev).then(() => save()));
+    if (fetchHeat && ev.coin && !(ev.heat && ev.heat.checked_at)) bg(refreshHeat(ev));
+  }
+
+  function describeChange(before, ev, post, kind) {
+    const a = before, b = ev.facts, parts = [];
+    if (b.unlock_pct_circ != null && b.unlock_pct_circ !== a.unlock_pct_circ) parts.push(a.unlock_pct_circ != null ? `unlock size now ${b.unlock_pct_circ}% (was ${a.unlock_pct_circ}%)` : `unlock size now ${b.unlock_pct_circ}%`);
+    if (b.unlock_tokens != null && b.unlock_tokens !== a.unlock_tokens) parts.push(`token count now ${templates.fmtCount(b.unlock_tokens)}`);
+    if (b.amount_usd != null && b.amount_usd !== a.amount_usd) parts.push(`reported loss now about ${templates.fmtUsd(b.amount_usd)}`);
+    const added = (b.restrictions || []).slice((a.restrictions || []).length).map((r) => r.detail.toLowerCase());
+    if (added.length) parts.push('new restriction: ' + added.join(', '));
+    if (kind === 'denial') parts.push('a denial or correction was reported');
+    else if (kind === 'confirmation') parts.push('an official source confirmed');
+    if (!parts.length) parts.push(`another source reported the same story (${post.sourceDomain || post.sourceName})`);
+    return `Rev ${ev.rev}: ${parts.join('; ')}.`;
   }
 
   function timelineEntry(post, kind, nowIso) {
@@ -101,12 +135,15 @@ function createEngine(opts = {}) {
       ev.timeline.push(timelineEntry(post, kind, nowIso));
       ev.post_ids.push(post.id);
       if (post.storyId && !ev.story_ids.includes(post.storyId)) ev.story_ids.push(post.storyId);
+      const before = JSON.parse(JSON.stringify(ev.facts));
       ev.facts = mergeFacts(ev.facts, nf);
       ev.importance = Math.max(ev.importance || 0, post.importance || 0);
       ev.rev += 1;
       ev.updated_at = nowIso;
       rebuild(ev, post, false);
+      ev.last_change = { rev: ev.rev, at: nowIso, text: describeChange(before, ev, post, kind) };
       save();
+      afterChange(ev);
       log(`[explain] merged ${ev.id} rev ${ev.rev}`);
       return ev;
     }
@@ -142,8 +179,10 @@ function createEngine(opts = {}) {
       live_at: live ? nowIso : null,
     };
     rebuild(ev, post, true);
+    ev.last_change = null;
     events.push(ev);
     save();
+    afterChange(ev);
     log(`[explain] new ${ev.state} event ${ev.id} (${g.reason})`);
     return ev;
   }
@@ -185,8 +224,15 @@ function createEngine(opts = {}) {
   }
 
   function tick() {
-    return { promoted: promoteQueue(), ...closeOld() };
+    const r = { promoted: promoteQueue(), ...closeOld() };
+    if (fetchHeat) {
+      const now = nowFn();
+      const due = load().filter((e) => e.state === 'live' && e.coin && (!e.heat || !e.heat.checked_at || now - Date.parse(e.heat.checked_at) > 10 * 60e3)).slice(0, 5);
+      for (const e of due) bg(refreshHeat(e));
+    }
+    return r;
   }
+  const settled = async () => { while (pending.size) await Promise.all([...pending]); };
 
   const visible = (e) => e.state !== 'queued';
   function list({ limit = 20, coin = null, includeQueued = false } = {}) {
@@ -200,12 +246,21 @@ function createEngine(opts = {}) {
   const byPost = (postId) => load().find((e) => visible(e) && e.post_ids.includes(postId)) || null;
   function reset() { events = null; }
 
-  return { consider, promoteQueue, closeOld, tick, list, get, byPost, reset, file, _events: () => load() };
+  return { consider, promoteQueue, closeOld, tick, list, get, byPost, reset, settled, file, _events: () => load() };
 }
 
 let def = null;
 function engine() {
-  if (!def) def = createEngine();
+  if (!def) {
+    const cfg = require('../config');
+    const priv = process.env.EXPLAIN_PRIVATE === '1';
+    def = createEngine({
+      rewriteCmd: process.env.EXPLAIN_REWRITE_CMD || cfg.EXPLAIN_REWRITE_CMD || '',
+      rewriteDailyMax: parseInt(process.env.EXPLAIN_REWRITE_DAILY_MAX || '', 10) || cfg.EXPLAIN_REWRITE_DAILY_MAX,
+      fetchHeat: process.env.EXPLAIN_HEAT === '0' ? null : heatLib.makeFetcher((u) => require('../http').request(u, { timeoutMs: 8000 }), priv),
+      privateHeat: priv,
+    });
+  }
   return def;
 }
 // Safe wrappers for the live collector: never throw into the ingest path.
