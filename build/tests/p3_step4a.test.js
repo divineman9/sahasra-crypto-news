@@ -52,8 +52,8 @@ const prisma = new PrismaClient();
   const W = require(APP + '/ingest/watchlist.js');
   const bbwFile = path.join(os.tmpdir(), 'bbw_4a.json');
   fs.writeFileSync(bbwFile, JSON.stringify({ setups: [{ symbol: '1000PEPEUSDT' }, { symbol: 'ONEUSDT' }, { symbol: '币安人生USDT' }, { symbol: 'HUTUSDT' }] }));
-  eq('loadWatchBases: strip, dedupe, non-ASCII + non-coin removed, portfolio added', W.loadWatchBases({ bbwFile, portfolio: ['BTC', 'ETH'] }), ['BTC', 'ETH', 'ONE', 'PEPE']);
-  let threw = false; try { W.loadWatchBases({ bbwFile: 'D:/nonexistent/x.json', portfolio: [] }); } catch { threw = true; }
+  eq('loadWatchBases: strip, dedupe, non-ASCII + non-coin removed, portfolio added', W.loadWatchBases({ bbwFile, wideFile: 'D:/nonexistent/wide.json', portfolio: ['BTC', 'ETH'] }), ['BTC', 'ETH', 'ONE', 'PEPE']);
+  let threw = false; try { W.loadWatchBases({ bbwFile: 'D:/nonexistent/x.json', wideFile: 'D:/nonexistent/wide.json', portfolio: [] }); } catch { threw = true; }
   check('missing BBW file → throws', threw);
 
   console.log('— gnews adapter');

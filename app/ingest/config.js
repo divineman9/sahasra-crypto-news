@@ -5,6 +5,7 @@ const SEC_UA = process.env.SEC_USER_AGENT || '';
 const DISCORD_WEBHOOK = process.env.DISCORD_NEWS_WEBHOOK || '';
 const PORTFOLIO = (process.env.NEWS_PORTFOLIO || '').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
 const BBW_LIVE_JSON = process.env.BBW_LIVE_JSON || 'D:\\claude projects\\crypto\\screener\\base_break_live.json';
+const BBW_WIDE_JSON = process.env.BBW_WIDE_JSON || 'D:\\claude projects\\crypto\\screener\\base_break_wide_live.json';
 const NEWS_LIVE_JSON = process.env.NEWS_LIVE_JSON || 'D:\\claude projects\\crypto\\screener\\news_live.json';
 const KEEP_DAYS = 7;
 
@@ -142,4 +143,13 @@ const REDDIT_SUBS = [
   { sub: 'defi', minScore: 30, rssTake: 5 },
 ];
 
-module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, BSKY_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS, YT_CHANNELS, BSKY_ACCOUNTS, REDDIT_SUBS };
+
+// P5 explain cards. Calendar path is private (empty => news-parsed unlocks only).
+const TOP_EXCHANGES = ['binance', 'coinbase', 'okx', 'bybit', 'upbit', 'kraken', 'bithumb'];
+const EXPLAIN_ENABLED = process.env.EXPLAIN_ENABLED !== '0';
+const EXPLAIN_REWRITE_CMD = process.env.EXPLAIN_REWRITE_CMD || '';
+const EXPLAIN_REWRITE_DAILY_MAX = parseInt(process.env.EXPLAIN_REWRITE_DAILY_MAX || '20', 10) || 20;
+const EXPLAIN_UNLOCK_CALENDAR = process.env.EXPLAIN_UNLOCK_CALENDAR || '';
+const EXPLAIN_PRIVATE = process.env.EXPLAIN_PRIVATE === '1';
+
+module.exports = { BROWSER_UA, SEC_UA, DISCORD_WEBHOOK, PORTFOLIO, BBW_LIVE_JSON, BBW_WIDE_JSON, NEWS_LIVE_JSON, KEEP_DAYS, CRYPTO_FILTER, BSKY_FILTER, RSS_FEEDS, MACRO_FILTER, TG_CHANNELS, YT_CHANNELS, BSKY_ACCOUNTS, REDDIT_SUBS, TOP_EXCHANGES, EXPLAIN_ENABLED, EXPLAIN_REWRITE_CMD, EXPLAIN_REWRITE_DAILY_MAX, EXPLAIN_UNLOCK_CALENDAR, EXPLAIN_PRIVATE };

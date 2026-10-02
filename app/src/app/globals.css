@@ -190,3 +190,189 @@ a:hover {
     animation: none;
   }
 }
+
+/* ───────────────────────── P5 "Understand this" explain cards + Devi marks ─────────────────────────
+   Original editorial line-art (spec section 2). Colours per Devi, dark neon default; light overrides below.
+   Neon stays on borders only; text is crisp. Marks are decorative (aria-hidden); static frame = resolved state. */
+:root {
+  --devi-tara: #2f6bff;
+  --devi-tara-2: #c9d1e0;
+  --devi-kali: #1b2559;
+  --devi-kali-2: #c81e45;
+  --devi-bhuvaneshwari: #ffb000;
+  --devi-bhuvaneshwari-2: #9d4dff;
+  --devi-tripurasundari: #ff4d6d;
+  --devi-tripurasundari-2: #e0b84a;
+  --devi-chhinnamasta: #ff7a59;
+  --devi-chhinnamasta-2: #f3efe4;
+  --devi-kamala: #ff8fc2;
+  --devi-kamala-2: #ffb000;
+  --devi-bhairavi: #ff3860;
+  --devi-bhairavi-2: #c67a3c;
+  --devi-bagalamukhi: #ffd21f;
+  --devi-bagalamukhi-2: #b9892b;
+  --devi-dhumavati: #8e99ab;
+  --devi-dhumavati-2: #e6e9ef;
+  --devi-matangi: #19c37d;
+  --devi-matangi-2: #14b8a6;
+  --ex-bg: #0a0d1c;
+  --ex-fg: #e6ebf5;
+  --ex-muted: #9aa6bd;
+  --ex-border: rgba(0, 240, 255, 0.4);
+  --ex-rule: rgba(0, 240, 255, 0.16);
+  --ex-glow: rgba(0, 240, 255, 0.18);
+  --ex-dot-on: #00f0ff;
+  --ex-dot-off: rgba(154, 166, 189, 0.35);
+  --ex-link: #7dd3fc;
+  --ex-red: #ff3860;
+  --ex-amber: #ffb000;
+  --ex-violet: #b78bff;
+  --ex-lime: #39ff14;
+  --ex-cyan: #00f0ff;
+  --ex-mark-glow: drop-shadow(0 0 1px rgba(0, 240, 255, 0.55));
+}
+[data-theme="light"] {
+  --devi-tara: #1d4ed8;
+  --devi-tara-2: #8a96ad;
+  --devi-kali: #2a3a8c;
+  --devi-kali-2: #c81e45;
+  --devi-bhuvaneshwari: #b07400;
+  --devi-bhuvaneshwari-2: #9d4dff;
+  --devi-tripurasundari: #be123c;
+  --devi-tripurasundari-2: #e0b84a;
+  --devi-chhinnamasta: #c2410c;
+  --devi-chhinnamasta-2: #9a8f78;
+  --devi-kamala: #be3d7f;
+  --devi-kamala-2: #ffb000;
+  --devi-bhairavi: #c21e3e;
+  --devi-bhairavi-2: #c67a3c;
+  --devi-bagalamukhi: #a88600;
+  --devi-bagalamukhi-2: #b9892b;
+  --devi-dhumavati: #55606f;
+  --devi-dhumavati-2: #8a93a3;
+  --devi-matangi: #0f8a58;
+  --devi-matangi-2: #14b8a6;
+  --ex-bg: #fbfcff;
+  --ex-fg: #0f172a;
+  --ex-muted: #475569;
+  --ex-border: rgba(29, 78, 216, 0.5);
+  --ex-rule: rgba(15, 23, 42, 0.14);
+  --ex-glow: transparent;
+  --ex-dot-on: #1d4ed8;
+  --ex-dot-off: rgba(71, 85, 105, 0.3);
+  --ex-link: #1d4ed8;
+  --ex-red: #be123c;
+  --ex-amber: #92600a;
+  --ex-violet: #6d28d9;
+  --ex-lime: #166534;
+  --ex-cyan: #0369a1;
+  --ex-mark-glow: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --devi-tara: #1d4ed8;
+    --devi-tara-2: #8a96ad;
+    --devi-kali: #2a3a8c;
+    --devi-kali-2: #c81e45;
+    --devi-bhuvaneshwari: #b07400;
+    --devi-bhuvaneshwari-2: #9d4dff;
+    --devi-tripurasundari: #be123c;
+    --devi-tripurasundari-2: #e0b84a;
+    --devi-chhinnamasta: #c2410c;
+    --devi-chhinnamasta-2: #9a8f78;
+    --devi-kamala: #be3d7f;
+    --devi-kamala-2: #ffb000;
+    --devi-bhairavi: #c21e3e;
+    --devi-bhairavi-2: #c67a3c;
+    --devi-bagalamukhi: #a88600;
+    --devi-bagalamukhi-2: #b9892b;
+    --devi-dhumavati: #55606f;
+    --devi-dhumavati-2: #8a93a3;
+    --devi-matangi: #0f8a58;
+    --devi-matangi-2: #14b8a6;
+    --ex-bg: #fbfcff;
+    --ex-fg: #0f172a;
+    --ex-muted: #475569;
+    --ex-border: rgba(29, 78, 216, 0.5);
+    --ex-rule: rgba(15, 23, 42, 0.14);
+    --ex-glow: transparent;
+    --ex-dot-on: #1d4ed8;
+    --ex-dot-off: rgba(71, 85, 105, 0.3);
+    --ex-link: #1d4ed8;
+    --ex-red: #be123c;
+    --ex-amber: #92600a;
+    --ex-violet: #6d28d9;
+    --ex-lime: #166534;
+    --ex-cyan: #0369a1;
+    --ex-mark-glow: none;
+  }
+}
+
+.devi { display: block; overflow: visible; }
+.devi-tara { color: var(--devi-tara); }
+.devi-kali { color: var(--devi-kali); }
+.devi-bhuvaneshwari { color: var(--devi-bhuvaneshwari); }
+.devi-tripurasundari { color: var(--devi-tripurasundari); }
+.devi-chhinnamasta { color: var(--devi-chhinnamasta); }
+.devi-kamala { color: var(--devi-kamala); }
+.devi-bhairavi { color: var(--devi-bhairavi); }
+.devi-bagalamukhi { color: var(--devi-bagalamukhi); }
+.devi-dhumavati { color: var(--devi-dhumavati); }
+.devi-matangi { color: var(--devi-matangi); }
+
+.explain-card {
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  border: 1px solid var(--ex-border);
+  border-radius: 6px;
+  box-shadow: 0 0 10px var(--ex-glow);
+  padding: 14px 16px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 880px;
+  text-shadow: none;
+}
+.explain-card a:hover { text-shadow: none; }
+.explain-card .ex-rule { border-top: 1px solid var(--ex-rule); margin: 10px 0; }
+.explain-card .ex-muted { color: var(--ex-muted); }
+.explain-card .ex-header { display: flex; gap: 12px; align-items: flex-start; }
+.explain-card .ex-header-mark .devi { filter: var(--ex-mark-glow); }
+.explain-card .ex-header-main { min-width: 0; flex: 1; }
+.explain-card .ex-header-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.explain-card .ex-title { margin: 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+.explain-card .ex-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px; font-size: 12px; }
+.explain-card .ex-tag { border: 1px solid currentColor; border-radius: 3px; padding: 0 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.explain-card .ex-tag-red { color: var(--ex-red); }
+.explain-card .ex-tag-amber { color: var(--ex-amber); }
+.explain-card .ex-tag-violet { color: var(--ex-violet); }
+.explain-card .ex-tag-lime { color: var(--ex-lime); }
+.explain-card .ex-tag-cyan { color: var(--ex-cyan); }
+.explain-card .ex-section { margin: 8px 0; }
+.explain-card .ex-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 3px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--ex-fg); }
+.explain-card .ex-heading-sub { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.explain-card .ex-mark { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; }
+.explain-card .ex-body { margin: 0; }
+.explain-card .ex-list { margin: 0; padding-left: 18px; list-style: disc; }
+.explain-card .ex-evidence { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; }
+.explain-card .ex-dots { display: inline-flex; gap: 3px; }
+.explain-card .ex-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ex-dot-off); }
+.explain-card .ex-dot-on { background: var(--ex-dot-on); }
+.explain-card .ex-scenario { border-top: 1px solid var(--ex-rule); padding: 4px 0; }
+.explain-card .ex-scenario:first-child { border-top: 0; }
+.explain-card .ex-scenario-sum { cursor: pointer; }
+.explain-card .ex-scenario-sum:focus-visible { outline: 2px solid var(--ex-dot-on); outline-offset: 2px; }
+.explain-card .ex-dir { display: inline-block; width: 1.4em; color: var(--ex-muted); }
+.explain-card .ex-scenario-body { padding: 2px 0 2px 1.4em; }
+.explain-card .ex-scenario-body p { margin: 2px 0; }
+.explain-card .ex-timeline { margin: 4px 0 0; padding-left: 18px; }
+.explain-card .ex-link { color: var(--ex-link); }
+.explain-card .ex-footer { font-size: 11px; color: var(--ex-muted); }
+.explain-card .ex-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ex-loading { font-size: 11px; opacity: 0.7; padding: 8px 0; }
+.explain-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 3px; padding: 0 5px; font-size: 10px; line-height: 16px; height: 18px; white-space: nowrap; color: #cfe8ff; background: transparent; cursor: pointer; }
+.explain-chip:hover { border-color: rgba(0, 240, 255, 0.8); }
+@media (max-width: 640px) {
+  .explain-card { padding: 10px 12px; }
+  .explain-card .ex-header-mark .devi { width: 32px; height: 32px; }
+}

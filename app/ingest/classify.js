@@ -50,6 +50,10 @@ const COMPANY_LISTING_PHRASES = [
   /\blisting (on|at) (the )?(nasdaq|nyse|tsx|asx|lse)\b/gi,
 ];
 
+// P5: flags consumed by the explain-card gate (not categories). Added to the result only when true.
+const DEPEG_RE = /\b(depeg(s|ged)?|loses? (its )?peg|lost (its )?peg|below \$?0\.9\d)/i;
+const FREEZE_RE = /\b(freez(e|es|ing)|halt(s|ed|ing)? (trading|withdrawals|deposits)|paus(e|es|ed|ing) (all )?(withdrawals|deposits|trading))\b/i;
+
 const NEG_RE = /\b(not|no|never|refuses? to|refused to|declines? to|declined to|won't|will not|fails? to|failed to|yet to|has not|hasn't|have not|haven't|denies|denied)\b/i;
 
 const ALPHA_LISTING_RE = /doesn'?t mean official listing|not an official listing|alpha listing/i;
@@ -276,7 +280,10 @@ function classify(raw, tickers) {
     out.unlockPct = unlockInfo.pct;
     out.unlockPctBasis = unlockInfo.basis;
   }
+  const depeg = DEPEG_RE.test(title);
+  const freeze = FREEZE_RE.test(title);
+  if (depeg || freeze) out.flags = { depeg, freeze };
   return withCap(raw, out);
 }
 
-module.exports = { classify };
+module.exports = { classify, parseUnlock, NEG_RE };
