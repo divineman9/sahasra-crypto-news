@@ -16,7 +16,7 @@ console.log('— gate: unlock');
 eq('5.1% circulating passes', ev({ category: 'unlock', unlockPct: 5.1, unlockPctBasis: 'circulating' }).pass, true);
 eq('unspecified basis passes', ev({ category: 'unlock', unlockPct: 6, unlockPctBasis: null }).subtype, 'supply_shock');
 eq('4.9% fails', ev({ category: 'unlock', unlockPct: 4.9, unlockPctBasis: 'circulating' }).pass, false);
-eq('16.3% of TOTAL supply does not pass on news alone', ev({ category: 'unlock', unlockPct: 16.3, unlockPctBasis: 'total' }).pass, false);
+eq('total-basis pct >= 5 passes (implies >= 5% circulating)', ev({ category: 'unlock', unlockPct: 16.3, unlockPctBasis: 'total' }).pass, true);
 const cal = path.join(tmp, 'events_live.json');
 fs.writeFileSync(cal, JSON.stringify({ supply_shock: [{ symbol: 'STO', ts_ms: NOW + 86400e3, pct_circ: 5.146, tokens: 21351728, days: 1, date_et: 'Oct 2' }, { symbol: 'LOW', ts_ms: NOW + 3600e3, pct_circ: 4 }, { symbol: 'OLD', ts_ms: NOW - 200 * 3600e3, pct_circ: 9 }] }));
 const c1 = gate.evaluate(P({ category: 'unlock', unlockPct: null, tickers: ['STO'] }), { now: NOW, calendarPath: cal });
@@ -32,8 +32,8 @@ eq('hack tier4 news fails', ev({ category: 'hack', sourceTier: 4, title: 'x hack
 eq('hack from exchange kind passes', ev({ category: 'hack', sourceTier: 4, kind: 'exchange', title: 'x hacked' }).pass, true);
 const dp = ev({ category: 'other', flags: { depeg: true, freeze: false }, title: 'USDX loses its peg' });
 eq('depeg flag passes even category other', [dp.pass, dp.subtype, dp.category], [true, 'depeg', 'hack']);
-const fz = ev({ category: 'maintenance', flags: { depeg: false, freeze: true }, title: 'Exchange halts withdrawals' });
-eq('freeze flag passes even category maintenance', [fz.pass, fz.subtype], [true, 'halt']);
+const fz = ev({ category: 'other', flags: { depeg: false, freeze: true }, title: 'Exchange halts withdrawals' });
+eq('freeze flag passes even category other', [fz.pass, fz.subtype], [true, 'halt']);
 
 console.log('— gate: listing / delisting');
 eq('binance listing passes', ev({ category: 'listing', kind: 'exchange', exchange: 'Binance', sourceTier: 1 }).pass, true);
@@ -50,6 +50,24 @@ eq('regulator kind passes at tier 4', ev({ category: 'regulatory', importance: 8
 const macro = ev({ category: 'regulatory', importance: 70, title: 'Fed chair signals rate cut path', tickers: [] });
 eq('macro topic: coin null, topic fed_rate', [macro.pass, macro.coin, macro.topic, macro.subtype], [true, null, 'fed_rate', 'macro']);
 eq('stablecoin bill topic', ev({ category: 'regulatory', importance: 70, title: 'Senate passes stablecoin bill', tickers: [] }).topic, 'stablecoin_bill');
+
+console.log('— gate: review fixes (flags need trust; 2Z total-supply case)');
+eq('probe: Binance pauses withdrawals on Solana network for wallet maintenance -> no card', gate.evaluate(P({ category: 'maintenance', kind: 'exchange', exchange: 'Binance', sourceTier: 1, tickers: ['SOL'], flags: { depeg: false, freeze: true }, title: 'Binance pauses withdrawals on Solana network for wallet maintenance' }), { now: NOW }).pass, false);
+eq('probe: DOGE falls below $0.95 -> no card', gate.evaluate(P({ category: 'other', tickers: ['DOGE'], flags: { depeg: true, freeze: false }, title: 'DOGE falls below $0.95 as market slides' }), { now: NOW }).pass, false);
+eq('stablecoin below $0.95 -> depeg card', gate.evaluate(P({ category: 'other', tickers: ['USDC'], flags: { depeg: true, freeze: false }, title: 'USDC trades below $0.95' }), { now: NOW }).subtype, 'depeg');
+eq('depeg flag from tier-4 source fails', gate.evaluate(P({ category: 'other', sourceTier: 4, tickers: ['USDX'], flags: { depeg: true, freeze: false }, title: 'USDX loses its peg' }), { now: NOW }).pass, false);
+eq('freeze flag from tier-4 news fails', gate.evaluate(P({ category: 'other', sourceTier: 4, flags: { depeg: false, freeze: true }, title: 'x halts withdrawals' }), { now: NOW }).pass, false);
+{
+  const h2z = 'DoubleZero (2Z) unlocks 1.66B tokens, 16.3% of total supply, on Oct 2';
+  const c = classify({ title: h2z, kind: 'news' }, ['2Z']);
+  const g2 = gate.evaluate(P({ title: h2z, category: c.category, unlockPct: c.unlockPct, unlockPctBasis: c.unlockPctBasis, unlockAmount: c.unlockAmount, tickers: ['2Z'], importance: c.importance }), { now: NOW });
+  eq('real 2Z headline (16.3% of TOTAL supply) passes', [g2.pass, g2.subtype], [true, 'supply_shock']);
+  const { e } = mkEngine();
+  const card = e.consider(P({ id: 'z2z', title: h2z, category: c.category, unlockPct: c.unlockPct, unlockPctBasis: c.unlockPctBasis, unlockAmount: c.unlockAmount, tickers: ['2Z'], importance: c.importance, publishedAt: new Date(NOW - 60e3) }));
+  check('2Z card created with total-basis wording', card && card.facts.unlock_pct === 16.3 && card.facts.unlock_pct_basis === 'total' && card.facts.unlock_pct_circ === null && /coins equal to about 16\.3% of all 2Z that will ever exist become free to trade/.test(card.text.what) && card.text.uncertain.includes('How many coins already trade is not stated.'), card && card.text);
+  const m = e.consider(P({ id: 'z2z2', title: '2Z unlocks 6% of circulating supply', category: 'unlock', unlockPct: 6, unlockPctBasis: 'circulating', tickers: ['2Z'], importance: 80, publishedAt: new Date(NOW - 30e3) }));
+  check('merge prefers a circulating pct over total', m.facts.unlock_pct_circ === 6 && m.facts.unlock_pct_basis === 'circulating' && /about 6% more 2Z coins/.test(m.text.what), m.facts);
+}
 
 console.log('— gate: never pass');
 for (const cat of ['maintenance', 'other']) eq(cat + ' never passes', ev({ category: cat, importance: 90 }).pass, false);

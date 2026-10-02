@@ -25,7 +25,7 @@ for (const d of data.devis) {
 }
 eq('spec example tooltip (Dhumavati) verbatim', data.devis[8].tooltip, "Inspired by Dhumavati's association with endurance through uncertainty; a contemporary editorial interpretation.");
 eq('spec colours: Tara', [data.devis[0].colours.dark, data.devis[0].colours.light, data.devis[0].colours.accentDark], ['#2f6bff', '#1d4ed8', '#c9d1e0']);
-eq('spec colours: Kali', [data.devis[1].colours.dark, data.devis[1].colours.light, data.devis[1].colours.accentDark], ['#1b2559', '#2a3a8c', '#c81e45']);
+eq('spec colours: Kali', [data.devis[1].colours.dark, data.devis[1].colours.light, data.devis[1].colours.accentDark], ['#5b6ad0', '#2a3a8c', '#c81e45']);
 eq('spec colours: Matangi', [data.devis[9].colours.dark, data.devis[9].colours.light], ['#19c37d', '#0f8a58']);
 
 console.log('— rendering');
@@ -41,7 +41,7 @@ for (const d of DEVI) {
   const ids = [...svg.matchAll(/\sid="([^"]*)"/g)].map((m) => m[1]);
   check(key + ' ids prefixed devi-' + key + '-', ids.every((i) => i.startsWith('devi-' + key + '-')), ids);
   check(key + ' class devi devi-' + key, new RegExp('class="devi devi-' + key + '[" ]').test(svg));
-  check(key + ' has <title> for devtools', /<title>[^<]+<\/title>/.test(svg));
+  check(key + ' no <title> child (would mask the tooltip), has data-name', !/<title/.test(svg) && /data-name="[^"]+"/.test(svg));
   check(key + ' parts use the devi-' + key + '- class prefix', (svg.match(new RegExp('devi-' + key + '-', 'g')) || []).length >= 2);
   check(key + ' stroke-only default (fill none) + currentColor', svg.includes('fill="none"') && svg.includes('stroke="currentColor"'));
   // crude clipping check: absolute-coordinate paths (no arcs, no transform) stay inside the 64 box

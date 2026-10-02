@@ -34,7 +34,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const now = new Date();
   const mk = (o) => Object.assign({ id: crypto.randomUUID(), title: 't', url: URL_PREFIX + crypto.randomUUID(), category: 'other', importance: 80, sentiment: 'bearish', kind: 'news', sourceTier: 2, sourceDomain: 'theblock.co', sourceName: 'rss:theblock', exchange: null, tickers: ['STO'], flags: null, publishedAt: new Date(now.getTime() - 120e3), storyId: null, userLabel: null }, o);
   const uPost = mk({ title: 'StakeStone (STO) unlocks 21,351,728 tokens, 5.1% of circulating supply, on Oct 2', category: 'unlock', unlockPct: 5.1, unlockPctBasis: 'circulating', unlockAmount: 21351728 });
-  const hPost = mk({ title: 'Exchange halts withdrawals after incident', category: 'maintenance', flags: { depeg: false, freeze: true }, tickers: ['HLT'], exchange: 'Bybit', sourceTier: 2 });
+  const hPost = mk({ title: 'Exchange halts withdrawals after incident', category: 'other', flags: { depeg: false, freeze: true }, tickers: ['HLT'], exchange: 'Bybit', sourceTier: 2 });
   const eU = engine.consider(uPost);
   const eH = engine.consider(hPost);
   const raw = JSON.parse(fs.readFileSync(path.join(dir, 'events.json'), 'utf8'));

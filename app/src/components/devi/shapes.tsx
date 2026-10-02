@@ -77,9 +77,9 @@ export function DeviSvg({
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
+      data-name={title}
       className={`devi devi-${name}${play ? " is-playing" : ""}${className ? " " + className : ""}`}
     >
-      <title>{title}</title>
       {children}
     </svg>
   );

@@ -25,4 +25,6 @@ eq('Limited: sources disagree (spread > 1 pt)', ev.compute([row(post({ kind: 'ex
 eq('Not Limited when spread <= 1 pt', ev.compute([row(post({}))], { per_source_pct: { a: 5.1, b: 5.9 } }).level, 'Moderate');
 check('disagree reason mentions the number', /disagree/.test(ev.compute([row(post({}))], { per_source_pct: { a: 5.1, b: 7 } }).reason));
 eq('empty timeline is Limited, no crash', ev.compute([], facts).level, 'Limited');
+const two = ev.compute([row(post({ kind: 'exchange', sourceTier: 1, sourceDomain: 'binance.com' })), row(post({ kind: 'official', sourceDomain: 'github.com' }), 'update')], facts);
+check('two primary domains: no plus-0-news-sources', two.level === 'Strong' && !/[+] 0 /.test(two.reason) && /1 more primary source/.test(two.reason), two.reason);
 done('p5_evidence');

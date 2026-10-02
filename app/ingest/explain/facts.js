@@ -55,7 +55,7 @@ function extractFacts(post, ctx) {
     kind: post.kind || 'news',
     url: post.url || null,
     published_at: isFinite(pubMs) ? new Date(pubMs).toISOString() : null,
-    unlock_pct_circ: null, unlock_tokens: null, unlock_date_et: null, unlock_days: null, per_source_pct: null,
+    unlock_pct_circ: null, unlock_pct: null, unlock_pct_basis: null, unlock_tokens: null, unlock_date_et: null, unlock_days: null, per_source_pct: null,
     amount_usd: null, exchange: capExchange(post.exchange), market: null,
     price_t0: null, btc_t0: null, range_24h_pct: null,
     peg_usd: null, what_paused: null, body: null, event_date_et: null,
@@ -69,7 +69,11 @@ function extractFacts(post, ctx) {
       f.unlock_days = cal.days != null ? Number(cal.days) : null;
       if (cal.per_source_pct && typeof cal.per_source_pct === 'object') f.per_source_pct = cal.per_source_pct;
     }
-    if (f.unlock_pct_circ == null && post.unlockPct != null && (post.unlockPctBasis === 'circulating' || post.unlockPctBasis == null)) f.unlock_pct_circ = r1(post.unlockPct);
+    if (post.unlockPct != null) {
+      f.unlock_pct = r1(post.unlockPct);
+      f.unlock_pct_basis = post.unlockPctBasis || null;
+      if (f.unlock_pct_circ == null && (post.unlockPctBasis === 'circulating' || post.unlockPctBasis == null)) f.unlock_pct_circ = r1(post.unlockPct);
+    }
     if (f.unlock_tokens == null && post.unlockAmount != null) f.unlock_tokens = Math.round(post.unlockAmount);
     if (f.unlock_date_et == null) f.unlock_date_et = titleDate(title);
   }
@@ -97,6 +101,9 @@ function mergeFacts(cur, nxt) {
   const out = Object.assign({}, cur);
   const max = (a, b) => (a == null ? b : b == null ? a : Math.max(a, b));
   out.unlock_pct_circ = max(cur.unlock_pct_circ, nxt.unlock_pct_circ);
+  // a circulating-basis pct always wins over a total/max one
+  if (out.unlock_pct_circ != null && (cur.unlock_pct_basis !== 'circulating')) { out.unlock_pct = out.unlock_pct_circ; out.unlock_pct_basis = 'circulating'; }
+  else if (out.unlock_pct_circ == null) { out.unlock_pct = max(cur.unlock_pct, nxt.unlock_pct); out.unlock_pct_basis = cur.unlock_pct_basis || nxt.unlock_pct_basis; }
   out.unlock_tokens = max(cur.unlock_tokens, nxt.unlock_tokens);
   out.amount_usd = max(cur.amount_usd, nxt.amount_usd);
   for (const k of ['unlock_date_et', 'unlock_days', 'per_source_pct', 'market', 'event_date_et', 'what_paused', 'body', 'exchange', 'peg_usd']) if (out[k] == null) out[k] = nxt[k];

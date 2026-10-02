@@ -11,9 +11,11 @@ const MACRO_TOPICS = [
 ];
 const THEFT_RE = /\b(hacked|hackers?|hack (of|on|at|hits|drains)|drained|drainer|stolen|security breach|data breach|breach of|attacker|compromised|rug ?pull(ed)?)\b/i;
 const OFFICIAL_KINDS = new Set(['exchange', 'official']);
+const STABLECOINS = new Set(['USDT', 'USDC', 'DAI', 'USDE', 'FDUSD', 'TUSD', 'USDD', 'PYUSD', 'FRAX', 'LUSD', 'USDS', 'USD1', 'RLUSD', 'GUSD', 'BUSD', 'USDP', 'CRVUSD']);
+const STRONG_DEPEG_RE = /\b(depeg(s|ged)?|loses? (its )?peg|lost (its )?peg)/i;
 
 let calCache = { path: '', mtime: -1, rows: [] };
-// Private: events_live.json -> supply_shock[]; empty path => news-parsed unlocks only.
+// Private unlock calendar (supply_shock rows); empty path => news-parsed unlocks only.
 function calendarRows(calPath) {
   if (!calPath) return [];
   try {
@@ -71,7 +73,9 @@ function evaluate(post, opts = {}) {
   const out = (category, subtype, reason, extra) => Object.assign({ pass: true, reason, category, subtype, coin: ticker, topic: null, calendar: null }, extra || {});
 
   // 2. depeg / freeze flags can pass even when the category is maintenance/other.
-  if (flags.depeg) {
+  const trusted = tier <= 2 || OFFICIAL_KINDS.has(kind);
+  const depegOk = flags.depeg && trusted && (STRONG_DEPEG_RE.test(title) || (ticker && STABLECOINS.has(String(ticker).toUpperCase())));
+  if (depegOk) {
     return out('hack', 'depeg', 'depeg flag', { topic: ticker ? null : 'depeg_' + (slug(post.exchange) || String(post.id || '').slice(0, 8)) });
   }
   const cat = post.category;
@@ -79,7 +83,7 @@ function evaluate(post, opts = {}) {
     const sub = THEFT_RE.test(title) ? 'theft' : 'exploit';
     return out('hack', sub, 'hack from tier<=2 or exchange/official source', { topic: ticker ? null : 'hack_' + (slug(post.exchange) || String(post.id || '').slice(0, 8)) });
   }
-  if (flags.freeze) {
+  if (flags.freeze && trusted && cat !== 'maintenance') {
     const c = cat === 'hack' || cat === 'regulatory' ? cat : 'hack';
     return out(c, 'halt', 'freeze flag', { topic: ticker ? null : 'halt_' + (slug(post.exchange) || String(post.id || '').slice(0, 8)) });
   }
@@ -87,8 +91,8 @@ function evaluate(post, opts = {}) {
 
   // 1. unlock supply shock
   if (cat === 'unlock') {
-    const basisOk = post.unlockPctBasis === 'circulating' || post.unlockPctBasis == null;
-    if (post.unlockPct != null && post.unlockPct >= 5 && basisOk && ticker) return out('unlock', 'supply_shock', 'unlock >= 5% of circulating (news)');
+    // >= 5% of total/max supply implies >= 5% of circulating, so any basis qualifies.
+    if (post.unlockPct != null && post.unlockPct >= 5 && ticker) return out('unlock', 'supply_shock', 'unlock >= 5% of supply (news, basis ' + (post.unlockPctBasis || 'unstated') + ')');
     const hit = calendarHit(ticker, now, calPath);
     if (hit) return out('unlock', 'supply_shock', 'unlock calendar supply_shock >= 5%', { calendar: hit });
     return no('unlock below 5% of circulating / unconfirmed');

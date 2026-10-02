@@ -40,12 +40,16 @@ function unlock(f) {
   const pct = f.unlock_pct_circ;
   const d = f.unlock_date_et;
   let what;
-  if (pct != null && d) what = `On ${d} about ${pct}% more ${T} coins become free to trade.`;
+  const tp = f.unlock_pct;
+  if (pct == null && tp != null && d) what = `On ${d} coins equal to about ${tp}% of all ${T} that will ever exist become free to trade.`;
+  else if (pct == null && tp != null) what = `Coins equal to about ${tp}% of all ${T} that will ever exist are due to become free to trade soon.`;
+  else if (pct != null && d) what = `On ${d} about ${pct}% more ${T} coins become free to trade.`
   else if (pct != null) what = `About ${pct}% more ${T} coins are due to become free to trade soon.`;
   else what = `A large batch of ${T} coins is due to become free to trade.`;
   if (f.unlock_tokens != null) what += ` That is ${fmtCount(f.unlock_tokens)} coins.`;
   const uncertain = ['Which wallets receive the coins is not confirmed.'];
   if (spreadWide(f)) uncertain.push('Sources disagree on the size of the unlock.');
+  if (pct == null && tp != null) uncertain.push('How many coins already trade is not stated.');
   uncertain.push(NO_CASES);
   return {
     what,

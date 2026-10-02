@@ -66,7 +66,9 @@ function compute(timeline, facts) {
     reason = `Limited — sources disagree on the key number, ${when}`;
   } else if (prim.length > 0 && domains.size >= 2) {
     level = 'Strong';
-    reason = `Strong — ${primLabel} + ${plural(others.length, 'news source')}, ${when}`;
+    reason = others.length > 0
+      ? `Strong — ${primLabel} + ${plural(others.length, 'news source')}, ${when}`
+      : `Strong — ${primLabel} + ${plural(primDomains.size - 1, 'more primary source')}, ${when}`;
   } else if (prim.length > 0) {
     level = 'Moderate';
     reason = exchangeOnly ? `Moderate — ${primLabel} only, ${when}` : `Moderate — ${primLabel}, single source, ${when}`;

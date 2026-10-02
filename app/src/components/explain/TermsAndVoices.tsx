@@ -18,7 +18,11 @@ export function TermsAndVoices({ glossary, timeline, play }: { glossary: string[
         {timeline.map((t, i) => (
           <li key={i}>
             <span className="ex-muted">{etClock(t.ts)}</span> {t.kind}{" "}
-            <a href={t.url} target="_blank" rel="noopener noreferrer" className="ex-link">({t.source})</a>
+            {/^https?:\/\//.test(t.url) ? (
+              <a href={t.url} target="_blank" rel="noopener noreferrer" className="ex-link">({t.source})</a>
+            ) : (
+              <span>({t.source})</span>
+            )}
           </li>
         ))}
       </ol>
