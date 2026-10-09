@@ -279,6 +279,40 @@ function reg(kind) {
   };
 }
 
+// ---------------------------------------------------------------- systemic risk
+const SEV_TEXT = { 3: 'credible material risk, no demonstrated exploit', 4: 'confirmed major disruption', 5: 'active systemic failure' };
+function systemic(sev, label) {
+  return function (f) {
+    const head = String(f.headline || '').replace(/[.\s]+$/, '');
+    const scope = f.ticker ? f.ticker : 'the crypto market';
+    return {
+      what: `${label}: ${head}.`,
+      why: `Severity ${sev}/5 — ${SEV_TEXT[sev]}. Next-15-minute direction: UNKNOWN. This is a risk story for ${scope}, not a price call.`,
+      scenarios: [
+        sc('down', 'Pressure if the risk is confirmed by others or exploited.', 'hours–days', 'More likely if developers, exchanges or security researchers confirm it.', 'Prices fall while more outlets repeat the warning.'),
+        sc('up', 'Relief if it is rebutted or a fix is announced.', 'hours–days', 'More likely if the project publishes a clear fix or timeline.', 'Prices recover and the story fades.'),
+        sc('chop', 'Wait-and-see while experts discuss it.', 'first day', 'More likely when no concrete exploit or date is given.', 'Choppy prices without a clear direction.'),
+      ],
+      tradeoffs: 'Early warnings give time to prepare, but rushing (e.g. hasty wallet moves) can cause its own losses.',
+      affected: [
+        a(f.ticker ? `Holders of ${f.ticker}` : 'Crypto holders', 'The safety of their assets is being questioned.'),
+        a('Developers and wallets', 'They may need to plan upgrades.'),
+        a('Exchanges', 'They watch for risk and customer withdrawals.'),
+      ],
+      watch: [
+        w('Did developers or the project respond?', 'Look for an official statement or fix plan.'),
+        w('Is there a concrete exploit or date?', 'A warning without either is lower severity.'),
+        w('Are more outlets repeating it?', 'Story heat shows how many outlets carry it.'),
+      ],
+      uncertain: [
+        sev === 3 ? 'No demonstrated exploit yet — this is a warning.' : 'Details may still change as reports come in.',
+        NO_CASES,
+      ],
+      glossary: ['security'],
+    };
+  };
+}
+
 const TABLE = {
   'unlock:supply_shock': unlock,
   'hack:theft': theft,
@@ -294,6 +328,9 @@ const TABLE = {
   'regulatory:bull': reg('reg'),
   'regulatory:bear': reg('reg'),
   'regulatory:macro': reg('reg'),
+  'systemic_risk:warning': systemic(3, 'Key-figure warning'),
+  'systemic_risk:confirmed': systemic(4, 'Confirmed security problem'),
+  'systemic_risk:failure': systemic(5, 'Systemic failure'),
 };
 
 function render(category, subtype, facts) {

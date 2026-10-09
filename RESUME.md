@@ -4,6 +4,17 @@
 > **per-coin altcoin news for the ~500 Binance perps watched by the ShivaShakthi base-break dashboard**.
 
 
+## 2026-10-08 - Key-figure systemic-risk news now reaches Big News / Discord (LIVE, restarted)
+Why: Vitalik Buterin's AI-vs-cryptography warning (from 2026-10-07 20:04 ET, ~20 articles) was scored importance 20 / category "other" everywhere (opinion demotion of "could/might" + gate never passes "other"), so no Big News and no Discord alert; ETH broke $2,500 the next day.
+Done:
+- `app/ingest/keyFigures.json` (14 figures: Vitalik, Saylor, CZ, Teng, Armstrong, Garlinghouse, Yakovenko, Hoskinson, Back, Ardoino, Allaire, SEC chair, Fed chair, Bessent).
+- `app/ingest/systemicRisk.js` (pure): figure + attribution + risk topic (security/cryptography/quantum/lattice/encryption/insolvency/ban/withdrawal halt/"AI could break...") + material target (or inherently systemic topic); exclusions (denials, rumours, positive "enhanced security", anniversaries). Subtype/severity: warning 3/5, confirmed 4/5, failure 5/5. Importance: tier<=2/official 75, tier 3 65, tier 4 50.
+- `classify.js`: new category `systemic_risk` (bearish) checked before the opinion demotion; maxImportance cap kept.
+- `storyHeat.js` + `store.js`: >=5 distinct outlets on the same figure within 6 h incl. >=2 tier<=2 -> +10 importance (cap 100), heat {outlets, top, trending}.
+- `explain/gate.js`: systemic_risk passes at importance >= 75. `explain/templates.js`: systemic_risk:warning|confirmed|failure cards (severity line, "next-15-minute direction UNKNOWN", conditional down/up/chop scenarios). Existing GLM rewrite (EXPLAIN_REWRITE_CMD) explains them automatically.
+Verified: replay of the 22 real Buterin headlines -> 12 flagged (all relevant), 9 unrelated correctly ignored; WuBlockchain tier-2 item -> 75 -> gate pass (would have alerted ~20:31 ET 2026-10-07). Story heat unit-checked (65 -> 75 with 5 outlets/2 top-tier). Test suite: no new failures (fix1 + p5_public_sanity fail on the original code too; supervisor backup test is timing-flaky).
+Note: the Startup launcher runs `node supervisor.js` WITHOUT --with-ui, so a reboot brings back the collector but not the 4180 web page.
+Next: forward-log severity/direction calls (Astra: >=100 independent calls over >=30 days, >=60% and positive after costs before showing predictions); historical reaction stats only when n>=30; Opus review of this step.
 ## DEPLOYED on Windows — 2026-09-25 11:27 PM ET (26 Sep 03:27 UTC)
 - Merged cloud branch into main (dc9ea4f); all 25 suites PASS on Windows; Fable LIVE check = GO (report `build/p3_live_check.md`).
 - Pre-deploy patch from the live check: removed dead `blog:kraken` (403) and dead TG `PeckShieldAlert`/`CertiKAlert`; fixed `yt:theblock` channelId → `UCqjFueYMJ78eF6G0lGLzzpQ`; all YouTube `verified:false` for day one (YouTube RSS ~79% success from this IP — otherwise it marks news health degraded); official.js timeouts 30 s (ENS forum is slow) + `DRC|delist(ing)?` in GOVERNANCE_RE. `.env`: `GNEWS_TIERS="A,B"`.

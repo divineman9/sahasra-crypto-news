@@ -2,6 +2,7 @@
 
 const { STOCK_PERP_TITLE_RE: STOCK_PERP_RE } = require('./tickers');
 const { matchStrength } = require('./coinMatch');
+const systemicRisk = require('./systemicRisk');
 
 const REGEXPS = {
   hack: /\b(hacked|hackers?|hack (of|on|at|hits|drains)|exploit(ed|er)?|exploits? (of|on|in|at)|drained|drainer|stolen|security breach|data breach|breach of|attacker|rug ?pull(ed)?|compromised)\b/i,
@@ -218,6 +219,8 @@ function classify(raw, tickers) {
     isPromo = true;
     category = 'other';
   }
+
+  if (category !== 'hack' && category !== 'delisting' && !isPromo) { const sr = systemicRisk.detect({ title, sourceTier: raw.sourceTier, kind }); if (sr) return withCap(raw, { category: 'systemic_risk', importance: sr.importance, sentiment: 'bearish', systemic: sr }); }
 
   if (kind === 'news' && category !== 'hack' && OPINION_RE.test(title)) category = 'other';
 

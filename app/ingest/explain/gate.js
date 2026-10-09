@@ -99,6 +99,7 @@ function evaluate(post, opts = {}) {
     const c = cat === 'hack' || cat === 'regulatory' ? cat : 'hack';
     return out(c, 'halt', 'freeze flag', { topic: ticker ? null : 'halt_' + (slug(post.exchange) || String(post.id || '').slice(0, 8)) });
   }
+  if (cat === 'systemic_risk') { if (post.importance < 75) return no('systemic_risk below 75'); const sr = require('../systemicRisk').detect({ title, sourceTier: tier, kind }); const sub = (sr && sr.subtype) || 'warning'; const fig = (sr && sr.figureId) || 'figure'; return out('systemic_risk', sub, 'key-figure systemic risk importance>=75', { topic: ticker ? null : 'systemic_' + fig }); }
   if (cat === 'maintenance' || cat === 'other' || !cat) return no('category ' + cat + ' never passes');
 
   // 1. unlock supply shock

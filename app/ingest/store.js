@@ -157,6 +157,7 @@ class Store {
           console.error('[store] detailTickers error:', e.message || e);
         }
       }
+      try { cls = await require('./storyHeat').boost(this.prisma, raw, cls, now); } catch (e) { console.error('[store] storyHeat error:', e.message || e); }
       const norm = normalize(raw.title);
       const sh = simhash64(raw.title);
       const id = crypto.randomUUID();

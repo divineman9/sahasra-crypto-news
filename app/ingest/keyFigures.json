@@ -1,0 +1,100 @@
+[
+  {
+    "id": "vitalik",
+    "name": "Vitalik Buterin",
+    "aliases": ["vitalik buterin", "buterin", "vitalik"],
+    "role": "Ethereum co-founder",
+    "coins": ["ETH"]
+  },
+  {
+    "id": "saylor",
+    "name": "Michael Saylor",
+    "aliases": ["michael saylor", "saylor"],
+    "role": "Strategy chairman",
+    "coins": ["BTC"]
+  },
+  {
+    "id": "cz",
+    "name": "Changpeng Zhao",
+    "aliases": ["changpeng zhao", "cz"],
+    "role": "Binance founder",
+    "coins": ["BNB"]
+  },
+  {
+    "id": "heart",
+    "name": "Richard Teng",
+    "aliases": ["richard teng"],
+    "role": "Binance CEO",
+    "coins": ["BNB"]
+  },
+  {
+    "id": "armstrong",
+    "name": "Brian Armstrong",
+    "aliases": ["brian armstrong"],
+    "role": "Coinbase CEO",
+    "coins": ["BTC", "ETH"]
+  },
+  {
+    "id": "garlinghouse",
+    "name": "Brad Garlinghouse",
+    "aliases": ["brad garlinghouse", "garlinghouse"],
+    "role": "Ripple CEO",
+    "coins": ["XRP"]
+  },
+  {
+    "id": "yakovenko",
+    "name": "Anatoly Yakovenko",
+    "aliases": ["anatoly yakovenko", "yakovenko"],
+    "role": "Solana co-founder",
+    "coins": ["SOL"]
+  },
+  {
+    "id": "hoskinson",
+    "name": "Charles Hoskinson",
+    "aliases": ["charles hoskinson", "hoskinson"],
+    "role": "Cardano founder",
+    "coins": ["ADA"]
+  },
+  {
+    "id": "back",
+    "name": "Adam Back",
+    "aliases": ["adam back"],
+    "role": "Blockstream CEO",
+    "coins": ["BTC"]
+  },
+  {
+    "id": "tether",
+    "name": "Paolo Ardoino",
+    "aliases": ["paolo ardoino", "ardoino"],
+    "role": "Tether CEO",
+    "coins": ["USDT"]
+  },
+  {
+    "id": "circle",
+    "name": "Jeremy Allaire",
+    "aliases": ["jeremy allaire", "allaire"],
+    "role": "Circle CEO",
+    "coins": ["USDC"]
+  },
+  {
+    "id": "sec",
+    "name": "SEC Chair",
+    "aliases": ["sec chair", "sec chairman", "atkins"],
+    "role": "US SEC chair",
+    "coins": ["BTC", "ETH"]
+  },
+  {
+    "id": "fed",
+    "name": "Fed Chair",
+    "aliases": ["fed chair", "fed chairman", "warsh", "powell"],
+    "role": "US Federal Reserve chair",
+    "coins": ["BTC"]
+  },
+  {
+    "id": "bessent",
+    "name": "Scott Bessent",
+    "aliases": ["scott bessent", "bessent"],
+    "role": "US Treasury Secretary",
+    "coins": ["BTC"]
+  }
+]
