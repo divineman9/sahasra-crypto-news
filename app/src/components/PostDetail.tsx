@@ -17,8 +17,8 @@ import {
   isSavedStory,
 } from "@/lib/filters";
 import {
-  CATEGORY_STYLE,
   SENTIMENT_CHIP,
+  categoryStyle,
   fmtDateTime,
   fmtPubTime,
   fmtRet,
@@ -43,7 +43,7 @@ export function PostDetail({ post }: { post: PostDTO }) {
   }, []);
 
   const kind = kindIcon(post.kind);
-  const cat = CATEGORY_STYLE[post.category];
+  const cat = categoryStyle(post.category);
   const storyKey = post.storyId ?? post.id;
 
   const siblings = posts
@@ -290,7 +290,7 @@ export function PostDetail({ post }: { post: PostDTO }) {
         </h2>
         <ul className="space-y-1">
           {siblings.map((p, i) => {
-            const c = CATEGORY_STYLE[p.category];
+            const c = categoryStyle(p.category);
             return (
               <li key={p.id} className="flex flex-wrap items-center gap-2">
                 {i === 0 ? (
@@ -322,7 +322,7 @@ export function PostDetail({ post }: { post: PostDTO }) {
         ) : (
           <ul className="space-y-1">
             {related.map((v) => {
-              const c = CATEGORY_STYLE[v.post.category];
+              const c = categoryStyle(v.post.category);
               return (
                 <li key={v.post.id}>
                   <Link

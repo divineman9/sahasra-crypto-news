@@ -2,6 +2,8 @@
 
 const systemicRisk = require('./systemicRisk');
 
+const CRYPTO_FAMILY = ['cryptography','encryption','quantum','post-quantum','lattice','private keys','signatures','ai risk','wallet migrations','wallet moves'];
+
 function outletKeyFromSourceName(name) {
   if (!name) return '';
   let s = String(name).toLowerCase();
@@ -47,6 +49,12 @@ async function boost(prisma, raw, cls, now) {
     for (const row of rows) {
       const fig = systemicRisk.matchFigure(row.title);
       if (!fig || fig.id !== cls.systemic.figureId) continue;
+      const detected = systemicRisk.detect({ title: row.title, sourceTier: row.sourceTier, kind: 'news' });
+      if (!detected) continue;
+      const rowTopic = detected.topic;
+      const curTopic = cls.systemic.topic;
+      const sameFamily = rowTopic && curTopic && CRYPTO_FAMILY.includes(rowTopic) && CRYPTO_FAMILY.includes(curTopic);
+      if (!(rowTopic === curTopic || sameFamily)) continue;
       const key = outletKey(row);
       if (!key) continue;
       outlets.add(key);
@@ -73,6 +81,7 @@ async function boost(prisma, raw, cls, now) {
     if (outletsCount >= 5 && topCount >= 2) {
       cls.importance = Math.min(100, cls.importance + 10);
       cls.systemic.heat.boosted = true;
+      if (typeof raw.maxImportance === 'number') cls.importance = Math.min(cls.importance, raw.maxImportance);
     }
 
     return cls;

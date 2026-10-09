@@ -19,8 +19,13 @@ export const CATEGORY_STYLE: Record<Category, { label: string; cls: string }> = 
   etf: { label: "ETF", cls: "text-sky-400 border-sky-500/50" },
   regulatory: { label: "REGULATORY", cls: "text-amber-400 border-amber-500/50" },
   maintenance: { label: "MAINT", cls: "text-slate-400 border-slate-600" },
+  systemic_risk: { label: "⚠ RISK", cls: "text-orange-400 border-orange-500/60 bg-orange-500/10" },
   other: { label: "", cls: "" },
 };
+
+export function categoryStyle(c: string | null | undefined): { label: string; cls: string } {
+  return (CATEGORY_STYLE as Record<string, { label: string; cls: string }>)[c ?? "other"] ?? CATEGORY_STYLE.other;
+}
 
 export const SENTIMENT_CHIP: Record<"bullish" | "bearish" | "neutral", string> = {
   bullish: "text-emerald-400 border-emerald-500/40",

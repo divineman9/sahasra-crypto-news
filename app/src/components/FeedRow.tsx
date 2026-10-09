@@ -6,7 +6,7 @@ import { Check, ChevronRight, ExternalLink, Star, X } from "lucide-react";
 import { useFeedStore } from "@/store/useFeedStore";
 import { useLabel } from "@/hooks/useLabel";
 import { ageMs, fmtAge, isFresh, isSavedStory, type StoryView } from "@/lib/filters";
-import { CATEGORY_STYLE, SENTIMENT_CHIP, fmtDateTime, fmtRet, kindIcon } from "@/lib/ui";
+import { SENTIMENT_CHIP, categoryStyle, fmtDateTime, fmtRet, kindIcon } from "@/lib/ui";
 import { faviconUrl } from "@/lib/faviconUrl";
 import { DeviMark } from "@/components/devi";
 import { ExplainLoader } from "@/components/explain/ExplainLoader";
@@ -41,7 +41,7 @@ function FeedRowImpl({ story, now, savedSet }: { story: StoryView; now: number; 
   // per row.
   const saved = isSavedStory(story, savedSet);
   const flash = flashAt !== undefined && now - flashAt <= 2500;
-  const cat = CATEGORY_STYLE[post.category];
+  const cat = categoryStyle(post.category);
   const ki = kindIcon(post.kind);
   const age = ageMs(post, now);
   const fresh = isFresh(post, now);
@@ -245,7 +245,7 @@ function FeedRowDetail({ id, story, explainId }: { id: string; story: StoryView;
           {post.sourceName} (tier {post.sourceTier})
         </dd>
         <dt className="text-slate-500">Category</dt>
-        <dd>{CATEGORY_STYLE[post.category].label || post.category}</dd>
+        <dd>{categoryStyle(post.category).label || post.category}</dd>
         <dt className="text-slate-500">Importance</dt>
         <dd>{story.maxImportance}</dd>
         <dt className="text-slate-500">Published</dt>

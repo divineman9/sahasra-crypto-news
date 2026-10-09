@@ -220,7 +220,7 @@ function classify(raw, tickers) {
     category = 'other';
   }
 
-  if (category !== 'hack' && category !== 'delisting' && !isPromo) { const sr = systemicRisk.detect({ title, sourceTier: raw.sourceTier, kind }); if (sr) return withCap(raw, { category: 'systemic_risk', importance: sr.importance, sentiment: 'bearish', systemic: sr }); }
+  if ((category === 'other' || category === 'maintenance') && !isPhishing && !isPromo && kind !== 'regulator' && kind !== 'symbol') { const sr = systemicRisk.detect({ title, sourceTier: raw.sourceTier, kind }); if (sr) return withCap(raw, { category: 'systemic_risk', importance: sr.importance, sentiment: 'bearish', systemic: sr }); }
 
   if (kind === 'news' && category !== 'hack' && OPINION_RE.test(title)) category = 'other';
 

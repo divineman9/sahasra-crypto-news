@@ -9,7 +9,7 @@ import { TopBar } from "@/components/TopBar";
 import type { PostDTO } from "@/lib/types";
 import type { SourceTab } from "@/lib/sourceTab";
 import { ageMs, fmtAge, groupStories, isFresh, type StoryView } from "@/lib/filters";
-import { CATEGORY_STYLE, fmtDateTime, fmtPubTime, kindIcon } from "@/lib/ui";
+import { categoryStyle, fmtDateTime, fmtPubTime, kindIcon } from "@/lib/ui";
 import { mediaThumb } from "@/lib/mediaThumb";
 
 type Range = "48h" | "7d";
@@ -303,7 +303,7 @@ export default function CoinPage() {
 function CoinStoryRow({ story, now }: { story: StoryView; now: number }) {
   const { post, count, maxImportance } = story;
   const ki = kindIcon(post.kind);
-  const cat = CATEGORY_STYLE[post.category];
+  const cat = categoryStyle(post.category);
   const age = ageMs(post, now);
   const thumb = post.kind === "media" ? mediaThumb(post.url) : null;
 
